@@ -14,3 +14,12 @@ ImageTool/112_2018-11-13_02/112_2018-11-13_02_frame_11105.jpg
 ImageTool/112_02.mp4
 ImageTool/11
 ImageTool/RECORD_OUTPUT/*
+handDetect/test_output.zip
+handDetect/opticalFlow.py
+handDetect/model/pose_iter_102000.caffemodel
+handDetect/model/pose_deploy.prototxt
+handDetect/handDetect.pyproj
+handDetect/handDetect.py
+handDetect/hand-output-Keypoints1.jpg
+ImageTool/test_cv_face.avi
+ImageTool/error.txt

@@ -23,3 +23,4 @@ handDetect/handDetect.py
 handDetect/hand-output-Keypoints1.jpg
 ImageTool/test_cv_face.avi
 ImageTool/error.txt
+pyBoost/imBoost_test_output/*

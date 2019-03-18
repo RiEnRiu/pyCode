@@ -1,0 +1,2 @@
+activate py36_cv3
+python fusion_5_poisson.py --bg=D:\fusion\bg\bg_big_100_filter --obj=D:\fusion\goods\goods_165_rot15_mask_filter\obj --mask=D:\fusion\goods\goods_165_rot15_mask_filter\mask --save=E:\fusion\fusion_5_poisson_720 --num=19600 --min=3 --max=5 --first=12001 --resize=1 --width=720 --height=720

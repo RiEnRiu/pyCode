@@ -1,0 +1,16 @@
+
+*.pyc
+Common/Annotations/*
+Common/EVALCACHE/annots.pkl
+Common/module_test_output/*
+Common/test_07_19_dets.pkl
+handDetect/test_hand - 副本 (2)/*
+handDetect/test_hand - 副本/*
+handDetect/test_hand/*
+handDetect/test_output/*
+ImageTool/1111/*
+ImageTool/1111_out/*
+ImageTool/112_2018-11-13_02/112_2018-11-13_02_frame_11105.jpg
+ImageTool/112_02.mp4
+ImageTool/11
+ImageTool/RECORD_OUTPUT/*

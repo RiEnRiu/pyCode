@@ -1,0 +1,7 @@
+opencv3               --to image process
+numpy                 --to work in with opencv3
+
+tqdm                  --to use progress bar 
+
+tensorflow-gpu        --to speed up fusion
+

@@ -1,2 +1,2 @@
 # pyCode
-This is some of the code I use in my work.
+This is some code I usually use in image data preprocessing for image recognition.

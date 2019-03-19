@@ -60,7 +60,7 @@ class vocXmlobj:
 
 
 class vocXml:
-    def __init__(self,folder='Unknown',filename='Unknown',path = 'Unknown',database = 'Unknown',\
+    def __init__(self,folder='JPEGImages',filename='Unknown',path = './JEPGImages',database = 'Unknown',\
                 width = 0,height = 0,depth = 3,segmented = 0,objs = None):
         self.folder = folder
         self.filename = filename

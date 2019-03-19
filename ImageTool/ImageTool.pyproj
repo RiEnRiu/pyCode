@@ -31,6 +31,9 @@
     <Compile Include="checkVOCDataset.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="cut_voc.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="decodeVideo.py" />
     <Compile Include="record.py">
       <SubType>Code</SubType>

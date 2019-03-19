@@ -16,11 +16,14 @@ def scan_folder(path):
 # this.splitext('123.') ->  ['123', '']        , different from os.path.splitext()
 # this.splitext('123') ->  ['123', '']         ,    the same as os.path.splitext()
 def splitext(fileFullName):
-    dot = fileFullName.rfind('.')
-    if dot==-1 or fileFullName[-1]=='.':
+    if fileFullName[-1]=='.':
         return fileFullName,''
     else:
-        return fileFullName[:dot],fileFullName[dot:]
+        dot = fileFullName.rfind('.')
+        if dot==-1:
+            return fileFullName,''
+        else:
+            return fileFullName[:dot],fileFullName[dot:]
 
 def __get_exts_set(exts):
     if exts is None:
@@ -229,6 +232,7 @@ class productionLineWorker:
         self.flow_type = flow_type # or 'LIFO'
         self.refresh_HZ = refresh_HZ
 
+#TODO make it more useful
 class productionLine:
     def __init__(self, workers, maxsize = 0, flow_type='FIFO'):
         # param
@@ -349,7 +353,8 @@ class productionLine:
 
     def get(self):
         if self.empty():
-            time.sleep(1.0 / self._workers[self._num_workers].refresh_HZ)
+            #TODO bug = len(self._workers) == self._num_workers-1
+            time.sleep(1.0 / self._workers[self._num_workers-1].refresh_HZ)
             return False,None
         else:
             return True,self._q_list[self._num_workers].get()
@@ -367,6 +372,7 @@ if __name__=='__main__':
     import sys
     sys.path.append('../')
     import pyBoost as pb
+    #import pyBoostBase as pb
 
     def test_scan():
         path_to_scanner = r'G:\obj_mask_10'
@@ -394,11 +400,7 @@ if __name__=='__main__':
 
     def test_FPS():
         import time
-
-        print(pb)
-
         p_fps = pb.FPS()
-
         key=-1
         time.time()
         for x in range(100):
@@ -468,7 +470,7 @@ if __name__=='__main__':
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    #test_scan()
-    test_FPS()
+    test_scan()
+    #test_FPS()
     #test_productionLine()
 

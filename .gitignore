@@ -1,4 +1,4 @@
-
+﻿
 *.pyc
 Common/Annotations/*
 Common/EVALCACHE/annots.pkl
@@ -40,3 +40,5 @@ tf_module/v1_2019-02-21_17-58-9.avi
 tf_module/v1_2019-02-21_17-58-9_frame_10285.jpg
 tf_module/tf_module.zip
 pyBoost/pyBoost_test_output/*
+.vs/*
+tools/test_tools/*

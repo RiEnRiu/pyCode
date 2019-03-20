@@ -206,33 +206,26 @@ def vocXmlWrite(filename,vocxml_info):
     return flag
 
 #inplace
-#return = 0, there is no changing; 
-#return = 1, there is something changing;
-#return = -1, there is no objects after adjusting
+#return True if nothing is changed
 def adjustBndbox(xml_info):
-    out_flag = 0
-    list_to_del = []
-    for i,one_bndbox in enumerate(xml_info.objs):
+    no_change = True
+    for i in range(len(xml_info.objs)-1,-1,-1):
+        one_bndbox = xml_info.objs[i]
         if one_bndbox.xmin<1:
             one_bndbox.xmin = 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.ymin<1:
             one_bndbox.ymin = 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.xmax>=xml_info.width:
             one_bndbox.xmax = xml_info.width - 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.ymax>xml_info.height:
             one_bndbox.ymax = xml_info.height - 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.xmin>=one_bndbox.xmax or one_bndbox.ymin>=one_bndbox.ymax:
-            list_to_del.append(i)
-    if list_to_del!=[]:
-        for i in reversed(list_to_del):
-            temp = xml_info.objs.pop(i)
-        return -1
-    else:
-        return out_flag
+            xml_info.objs.pop(i)
+    return no_change
 
 class vocResizer(pbimg.imResizer):
     def __init__(self, resize_type, dsize, interpolation):

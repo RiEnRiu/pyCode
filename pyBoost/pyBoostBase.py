@@ -147,16 +147,16 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
     others2.extend([file2[i] \
                 for i in (set(range(len(file2)))-set(x[1] for x in paired_key))])
     
-    if with_root==True and with_ext==True:
+    if with_root_path==True and with_ext==True:
         return [[os.path.join(path1,file1[k1]),os.path.join(path2,file2[k2])] \
              for k1,k2 in paired_key],\
                [os.path.join(path1,x) for x in others1],\
                [os.path.join(path2,y) for y in others2]
-    elif with_root==False and with_ext==True:
+    elif with_root_path==False and with_ext==True:
         return [[file1[k1],file2[k2]] for k1,k2 in paired_key],\
                others1,\
                others2
-    elif with_root==True and with_ext==False:
+    elif with_root_path==True and with_ext==False:
         return [[os.path.join(path1,splitext(file1[k1])[0]),\
                  os.path.join(path2,splitext(file2[k2])[0])] \
              for k1,k2 in paired_key],\

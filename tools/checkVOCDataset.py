@@ -9,8 +9,8 @@ import argparse
 import tqdm
 import json
 import shutil
+import cv2
 
-    
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
@@ -43,19 +43,27 @@ if __name__=='__main__':
         shutil.move(x,move_jpeg_dir)
     for x in others_in_anno:
         shutil.move(x,move_anno_dir)
+    for f in pb.scan_folder(jpeg_path):
+        shutil.move(os.path.join(jpeg_path,f),move_jpeg_dir)
+    for f in pb.scan_folder(anno_path):
+        shutil.move(os.path.join(anno_path,f),move_anno_dir)
 
     #TODO: to speed up 
     bad_img_size_list = []
     is_check_img_size = args.fast== 'NOT_MENTIONED'
-    for img_path, xml_path in tqdm.tqdm(pairs):
+    for img_path, xml_path in tqdm.tqdm(pairs,ncols=55):
         #read xml
         xml = pb.voc.vocXmlRead(xml_path)
         #check whether size matched
         if is_check_img_size:
             img_shape = cv2.imread(img_path).shape
-            if img_shape[0]!=org_xml.height or img_shape[1]!=org_xml.width:
-                bad_img_size_list.append(bad_img_size_list)
+            if img_shape[0]!=xml.height or img_shape[1]!=xml.width:
+                bad_img_size_list.append((img_shape, xml, xml_path))
                 continue
+            elif len(img_shape)==3 and img_shape[2]!=xml.depth:
+                bad_img_size_list.append((img_shape, xml, xml_path))
+                continue
+
         #check voc
         no_change = pb.voc.adjustBndbox(xml)==0
         #move no obj or save changed
@@ -63,13 +71,16 @@ if __name__=='__main__':
             shutil.move(img_path, move_jpeg_dir)
             shutil.move(xml_path, move_anno_dir)
         elif no_change==False:#is changed
-            pb.voc.vocXmlWrite(xml_path)            
+            pb.voc.vocXmlWrite(xml_path,xml)            
 
     #print bad size images
     if len(bad_img_size_list)!=0:
         print('There are {0} images\' size not matched, such as:'.format(len(bad_img_size_list)))
-        for y in bad_img_size_list[:3]:
-            print('    {0}'.format(y))
+        for img_shape, xml, xml_path in bad_img_size_list[:3]:
+            print('{0}  img={1} vs xml=({2}, {3}, {4}).'.format(\
+                    os.path.basename(xml_path),\
+                    img_shape,\
+                    xml.height, xml.width, xml.depth))
 
     #rmdir if is empty
     try:

@@ -122,8 +122,8 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
     file1 = scan_file(path1,None,False,True)
     sp1 = [splitext(x) for x in file1]
     others1 = []
-    for i in reversed(list(range(len(file1)))):
-        if sp1[i][1] in exts_set1:
+    for i in range(len(file1)-1,-1,-1):
+        if sp1[i][1] not in exts_set1:
             others1.append(file1[i])
             file1.pop(i)
             sp1.pop(i)
@@ -131,8 +131,8 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
     file2 = scan_file(path2,None,False,True)
     sp2 = [splitext(x) for x in file2]
     others2 = []
-    for i in reversed(list(range(len(file2)))):
-        if sp2[i][1] in exts_set2:
+    for i in range(len(file2)-1,-1,-1):
+        if sp2[i][1] not in exts_set2:
             others2.append(file2[i])
             file2.pop(i)
             sp2.pop(i)

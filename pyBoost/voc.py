@@ -584,7 +584,7 @@ class bndbox():
         elif i==3 or i==-1:
             return self.ymax
         else:
-            raise IndexError('cvRect bndbox out of range')
+            raise IndexError('bndbox out of range')
 
     def tocvRect(self):
         return pbimg.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)

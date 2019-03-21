@@ -7,17 +7,16 @@ import pyBoost as pb
 
 import argparse
 import tqdm
-import json
 import shutil
 import cv2
 
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', type = str,required=True, help = 'Where is the VOC data.')
-    parser.add_argument('--move',type=str,help = 'where the other files move to? \"$dir$/others"')
-    parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='skip checking image size to be faster. \"OFF\"')
-    parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='sure to cover the source file. \"OFF\"')
+    parser.add_argument('--dir', type = str,required=True, help = 'Where is the VOC data set?')
+    parser.add_argument('--move',type=str,help = 'Where the other files move to? \"$dir$/others"')
+    parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='Skip checking image size to be faster. \"OFF\"')
+    parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Sure to cover the source file? \"OFF\"')
     args = parser.parse_args()
 
     #quiet mode

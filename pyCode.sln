@@ -19,8 +19,6 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tracker", "tracker\tracker.
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "vocTool", "vocTool\vocTool.pyproj", "{FD3BB00E-7FC4-4A7F-AC2C-AF6CDB56CDB1}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "videoTool", "videoTool\videoTool.pyproj", "{D16B21EE-9B96-42F1-AF8F-BC79DA9CC2BC}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "imTool", "imTool\imTool.pyproj", "{CF130E75-966B-42D6-AF0B-7D40306BA07F}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "pyBoost", "pyBoost\pyBoost.pyproj", "{90AF8C83-7309-46BC-A522-CD64A6340FC3}"
@@ -49,8 +47,6 @@ Global
 		{F4636CE2-BC67-4937-B28B-F2AFEC839834}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD3BB00E-7FC4-4A7F-AC2C-AF6CDB56CDB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FD3BB00E-7FC4-4A7F-AC2C-AF6CDB56CDB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D16B21EE-9B96-42F1-AF8F-BC79DA9CC2BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D16B21EE-9B96-42F1-AF8F-BC79DA9CC2BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF130E75-966B-42D6-AF0B-7D40306BA07F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CF130E75-966B-42D6-AF0B-7D40306BA07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

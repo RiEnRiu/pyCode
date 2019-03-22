@@ -52,17 +52,17 @@ xcopy .\test_module\*.py .\ubuntu\test_module
 mkdir .\ubuntu\tf_module
 copy .\tf_module\*.py .\ubuntu\tf_module
 
-::project tracker
-mkdir .\ubuntu\tracker
-copy .\tracker\*.py .\ubuntu\tracker
+::project tools
+mkdir .\ubuntu\tools
+copy .\tools\*.py .\ubuntu\tools
 
 ::project tracker
 mkdir .\ubuntu\tracker
 copy .\tracker\*.py .\ubuntu\tracker
 
-::project videoTool
-mkdir .\ubuntu\videoTool
-copy .\videoTool\*.py .\ubuntu\videoTool
+::project tracker
+mkdir .\ubuntu\tracker
+copy .\tracker\*.py .\ubuntu\tracker
 
 ::project vocTool
 mkdir .\ubuntu\vocTool

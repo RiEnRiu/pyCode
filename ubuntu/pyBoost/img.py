@@ -7,8 +7,6 @@ import cv2
 import numpy as np
 import math
 import threading
-import voc as pbvoc
-
 
 
 #Rotate
@@ -569,6 +567,7 @@ class cvRect():
             raise IndexError('cvRect index out of range')
 
     def tobndbox(self):
+        import voc as pbvoc
         return pbvoc.bndbox(self.x,self.y,self.x+self.width-1,self.y+self.height-1)
     
 
@@ -580,6 +579,7 @@ if __name__=='__main__':
     import sys
     sys.path.append('../')
     import pyBoost as pb
+    print(pb.img.imResizer)
 
     def test_imResizer(save_folder_name):
         import os

@@ -36,7 +36,7 @@ def argsort_merge(data):
     len_l = len(o_l)
     len_r = len(o_r)
     while(i!=len_l and j!=len_r):
-        if data[o_l[i]]<data[o_r[j]]):
+        if data[o_l[i]]<data[o_r[j]]:
             output.append(o_l[i])
             i = i+1
         else:
@@ -55,12 +55,12 @@ def sort_fast(data):
 
 def argsort_fast(data):
     len_data = len(data)
-    if len_data==0):
+    if len_data==0:
         return []
-    elif len_data==1):
+    elif len_data==1:
         return [0]
-    elif len_data==2):
-        if data[0]>data[1]):
+    elif len_data==2:
+        if data[0]>data[1]:
             return [1,0]
         else:
             return [0,1]
@@ -70,11 +70,11 @@ def argsort_fast(data):
     j = len(output)-1
     is_j_turn = True
     while(i!=j):
-        if output[i]>output[j]):
+        if output[i]>output[j]:
             output[i],output[j] = output[j],output[i]
             data_index[i],data_index[j] = data_index[j],data_index[i]
             is_j_turn = not is_j_turn
-        if is_j_turn):
+        if is_j_turn:
             j -= 1
         else:
             i += 1

@@ -60,7 +60,7 @@ class vocXmlobj:
 
 
 class vocXml:
-    def __init__(self,folder='Unknown',filename='Unknown',path = 'Unknown',database = 'Unknown',\
+    def __init__(self,folder='JPEGImages',filename='Unknown',path = './JEPGImages',database = 'Unknown',\
                 width = 0,height = 0,depth = 3,segmented = 0,objs = None):
         self.folder = folder
         self.filename = filename
@@ -169,65 +169,63 @@ def vocXmlRead(path):
     return out
 
 def vocXmlWrite(filename,vocxml_info):
-    xml_file = open(filename,'w')
-    xml_file.write('<annotation>'+'\n')
-    xml_file.write('    <folder>'+vocxml_info.folder+'</folder>'+'\n')
-    xml_file.write('    <filename>'+vocxml_info.filename+'</filename>'+'\n')
-    xml_file.write('    <path>' +vocxml_info.path+ '</path>' + '\n')
-    xml_file.write('    <source>' + '\n')
-    xml_file.write('        <database>'+vocxml_info.database+'</database>'  + '\n')
-    xml_file.write('    </source>' + '\n')
-    xml_file.write('    <size>' + '\n')
-    xml_file.write('        <width>' + str(vocxml_info.width)+ '</width>' + '\n')
-    xml_file.write('        <height>'  +str(vocxml_info.height)+ '</height>' + '\n')
-    xml_file.write('        <depth>' +str(vocxml_info.depth)+ '</depth>' + '\n')
-    xml_file.write('    </size>' + '\n')
-    xml_file.write('    <segmented>'+str(vocxml_info.segmented)+'</segmented>' + '\n')
-    for  one_obj in vocxml_info.objs:
-        xml_file.write('    <object>' + '\n')
-        xml_file.write('        <name>'+one_obj.name+ '</name>'  + '\n')
-        xml_file.write('        <pose>'+one_obj.pose+'</pose>' + '\n')
-        xml_file.write('        <truncated>'+str(one_obj.truncated)+'</truncated>' + '\n')
-        xml_file.write('        <difficult>'+str(one_obj.difficult)+'</difficult>'  + '\n')
-        xml_file.write('        <bndbox>' + '\n')
-        xml_file.write('            <xmin>'+str(one_obj.xmin)+'</xmin>'  + '\n')
-        xml_file.write('            <ymin>'+str(one_obj.ymin)+ '</ymin>' + '\n')
-        xml_file.write('            <xmax>'+str(one_obj.xmax)+ '</xmax>' + '\n')
-        xml_file.write('            <ymax>'+str(one_obj.ymax)+ '</ymax>' + '\n')
-        xml_file.write('        </bndbox>'  + '\n')
-        xml_file.write('    </object>' + '\n')
-    xml_file.write('</annotation>' + '\n')
-    xml_file.close()
-    return
+    flag = False
+    with open(filename,'w') as xml_file:
+        flag = True
+        try:
+            xml_file.write('<annotation>'+'\n')
+            xml_file.write('    <folder>'+vocxml_info.folder+'</folder>'+'\n')
+            xml_file.write('    <filename>'+vocxml_info.filename+'</filename>'+'\n')
+            xml_file.write('    <path>' +vocxml_info.path+ '</path>' + '\n')
+            xml_file.write('    <source>' + '\n')
+            xml_file.write('        <database>'+vocxml_info.database+'</database>'  + '\n')
+            xml_file.write('    </source>' + '\n')
+            xml_file.write('    <size>' + '\n')
+            xml_file.write('        <width>' + str(vocxml_info.width)+ '</width>' + '\n')
+            xml_file.write('        <height>'  +str(vocxml_info.height)+ '</height>' + '\n')
+            xml_file.write('        <depth>' +str(vocxml_info.depth)+ '</depth>' + '\n')
+            xml_file.write('    </size>' + '\n')
+            xml_file.write('    <segmented>'+str(vocxml_info.segmented)+'</segmented>' + '\n')
+            for  one_obj in vocxml_info.objs:
+                xml_file.write('    <object>' + '\n')
+                xml_file.write('        <name>'+one_obj.name+ '</name>'  + '\n')
+                xml_file.write('        <pose>'+one_obj.pose+'</pose>' + '\n')
+                xml_file.write('        <truncated>'+str(one_obj.truncated)+'</truncated>' + '\n')
+                xml_file.write('        <difficult>'+str(one_obj.difficult)+'</difficult>'  + '\n')
+                xml_file.write('        <bndbox>' + '\n')
+                xml_file.write('            <xmin>'+str(one_obj.xmin)+'</xmin>'  + '\n')
+                xml_file.write('            <ymin>'+str(one_obj.ymin)+ '</ymin>' + '\n')
+                xml_file.write('            <xmax>'+str(one_obj.xmax)+ '</xmax>' + '\n')
+                xml_file.write('            <ymax>'+str(one_obj.ymax)+ '</ymax>' + '\n')
+                xml_file.write('        </bndbox>'  + '\n')
+                xml_file.write('    </object>' + '\n')
+            xml_file.write('</annotation>' + '\n')
+        except Exception as e:
+            print('Error while saving \"{0}\"'.format(filename))
+            flag = False
+    return flag
 
 #inplace
-#return = 0, there is no changing; 
-#return = 1, there is something changing;
-#return = -1, there is no objects after adjusting
+#return True if nothing is changed
 def adjustBndbox(xml_info):
-    out_flag = 0
-    list_to_del = []
-    for i,one_bndbox in enumerate(xml_info.objs):
+    no_change = True
+    for i in range(len(xml_info.objs)-1,-1,-1):
+        one_bndbox = xml_info.objs[i]
         if one_bndbox.xmin<1:
             one_bndbox.xmin = 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.ymin<1:
             one_bndbox.ymin = 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.xmax>=xml_info.width:
             one_bndbox.xmax = xml_info.width - 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.ymax>xml_info.height:
             one_bndbox.ymax = xml_info.height - 1
-            out_flag = 1
+            no_change = False
         if one_bndbox.xmin>=one_bndbox.xmax or one_bndbox.ymin>=one_bndbox.ymax:
-            list_to_del.append(i)
-    if list_to_del!=[]:
-        for i in reversed(list_to_del):
-            temp = xml_info.objs.pop(i)
-        return -1
-    else:
-        return out_flag
+            xml_info.objs.pop(i)
+    return no_change
 
 class vocResizer(pbimg.imResizer):
     def __init__(self, resize_type, dsize, interpolation):
@@ -586,7 +584,7 @@ class bndbox():
         elif i==3 or i==-1:
             return self.ymax
         else:
-            raise IndexError('cvRect bndbox out of range')
+            raise IndexError('bndbox out of range')
 
     def tocvRect(self):
         return pbimg.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)

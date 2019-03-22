@@ -821,7 +821,7 @@ class pyFusion:
         mask[mask<=127]=0
 
         while(stop_value>1):
-            cv_poisson_mix = cv2.seamlessClone(obj,pre_out,mask,(int(rect[0][0]+rect[1][0]/2),int(rect[0][1]+rect[1][1]/2)),cv2.)
+            cv_poisson_mix = cv2.seamlessClone(obj,pre_out,mask,(int(rect[0][0]+rect[1][0]/2),int(rect[0][1]+rect[1][1]/2)),cv2.NORMAL_CLONE)
             this_out = ((paste_mixed_float32+cv_poisson_mix+pre_out)/3).astype(np.uint8)
             stop_value = np.abs(this_out - pre_out).max()
             pre_out = this_out.copy()

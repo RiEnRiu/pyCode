@@ -1,8 +1,4 @@
-
-#from pyBoost import base
-
-
-
+#-*-coding:utf-8-*-
 import cv2
 import numpy as np
 import math
@@ -65,20 +61,20 @@ def flip(img):
     
 #Crop
 def __crop_one(img,rate):
-    imgshape = img.shape
+    img_shape = img.shape
     is_1c = len(img.shape) == 2
     if rate>1:
         rate = 1.0
     if rate<0:
         rate = 0.0
         
-    maxShape = [imgshape[0] * (1.0-rate)-1.0,imgshape[1] * (1.0-rate)-1.0]
-    if maxShape[0]<=0 or maxShape[1]<=0:
+    max_shape = [img_shape[0] * (1.0-rate)-1.0,img_shape[1] * (1.0-rate)-1.0]
+    if max_shape[0]<=0 or max_shape[1]<=0:
         return img.copy()
-    x1 = random.randint(0,int(maxShape[1]))
-    y1 = random.randint(0,int(maxShape[0]))
-    x2 = x1+ int(imgshape[1]*rate)
-    y2 = y1+ int(imgshape[0]*rate)
+    x1 = random.randint(0,int(max_shape[1]))
+    y1 = random.randint(0,int(max_shape[0]))
+    x2 = x1+ int(img_shape[1]*rate)
+    y2 = y1+ int(img_shape[0]*rate)
     if is_1c:
         return img[y1:y2,x1:x2].copy()
     else:
@@ -210,7 +206,7 @@ def add_noise(img,*rates):
         return output
 
 #Hue
-def hue(img,anlges):
+def adjust_hue(img,anlges):
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -235,7 +231,7 @@ def hue(img,anlges):
     return output
 
 #Lightness
-def imLightness(img,rates):
+def adjust_lightness(img,rates):
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -246,7 +242,6 @@ def imLightness(img,rates):
         one_output = np.zeros(img.shape,img.dtype)
         
     hls = cv2.cvtColor(bgr,cv2.COLOR_BGR2HLS)
-        
     output = []
     for rate in rates:
         temp_hls = hls.copy()
@@ -259,7 +254,7 @@ def imLightness(img,rates):
     return output
 
 #Saturation
-def imSaturation(img,rates):
+def adjust_saturation(img,rates):
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -283,7 +278,7 @@ def imSaturation(img,rates):
     return output
 
 #Perspective
-def __imPerspective_one(img,type,rate):
+def __perspective_one(img,type,rate):
     img_cols = img.shape[1]
     img_rows = img.shape[0]
     src = np.array([[0.0,0.0],[img_cols,0.0],[img_cols,img_rows],[0.0,img_rows]],np.float32)
@@ -319,71 +314,71 @@ def __imPerspective_one(img,type,rate):
     r = cv2.getPerspectiveTransform(src,dist)
     return cv2.warpPerspective(img,r,(img_cols, img_rows))
 
-def imPerspective(img,rates):
+def perspective(img,rates):
     type_erum = ('U','UR','R','DR','D','DL','L','UL')
     output = []
     type_np = np.random.randint(0,7,len(rates),np.int)
     #print(type_erum[type_np[0]])
     for i in range(len(rates)):
-        output.append(__imPerspective_one(img,type_erum[type_np[i]],rates[i]))
+        output.append(__perspective_one(img,type_erum[type_np[i]],rates[i]))
     return output
 
-def imPerspectiveU(img,rates):
+def perspectiveU(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'U',rate))
+        output.append(__perspective_one(img,'U',rate))
     return output
 
-def imPerspectiveUR(img,rates):
+def perspectiveUR(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'UR',rate))
+        output.append(__perspective_one(img,'UR',rate))
     return output
 
-def imPerspectiveR(img,rates):
+def perspectiveR(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'R',rate))
+        output.append(__perspective_one(img,'R',rate))
     return output
 
-def imPerspectiveDR(img,rates):
+def perspectiveDR(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'DR',rate))
+        output.append(__perspective_one(img,'DR',rate))
     return output
 
-def imPerspectiveD(img,rates):
+def perspectiveD(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'D',rate))
+        output.append(__perspective_one(img,'D',rate))
     return output
 
-def imPerspectiveDL(img,rates):
+def perspectiveDL(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'DL',rate))
+        output.append(__perspective_one(img,'DL',rate))
     return output
 
-def imPerspectiveL(img,rates):
+def perspectiveL(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'L',rate))
+        output.append(__perspective_one(img,'L',rate))
     return output
 
-def imPerspectiveUL(img,rates):
+def perspectiveUL(img,rates):
     output = []
     for rate in rates:
-        output.append(__imPerspective_one(img,'UL',rate))
+        output.append(__perspective_one(img,'UL',rate))
     return output
 
 
 #class RESIZE_TYPE:
-RESIZE_TYPE_STRETCH = 0
-RESIZE_TYPE_ROUNDUP = 1
-RESIZE_TYPE_ROUNDUP_CROP = 2
-RESIZE_TYPE_ROUNDDOWN = 3
-RESIZE_TYPE_ROUNDDOWN_FILL_BLACK = 4
-RESIZE_TYPE_ROUNDDOWN_FILL_SELF = 5 
+IMRESIZE_STRETCH = 0
+IMRESIZE_ROUNDUP = 1
+IMRESIZE_ROUNDUP_CROP = 2
+IMRESIZE_ROUNDDOWN = 3
+IMRESIZE_ROUNDDOWN_FILL_BLACK = 4
+IMRESIZE_ROUNDDOWN_FILL_SELF = 5 
 
 class imResizer:
 
@@ -409,16 +404,16 @@ class imResizer:
         if found_param is not None:
             return found_param
 
-        if self._resize_type==RESIZE_TYPE_STRETCH:
+        if self._resize_type==RESIZE_STRETCH:
             output = (self._dsize, self._dsize, (self._dsize[0]/src_size[0], 0),(self._dsize[1]/src_size[1], 0))
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDUP:
+        elif self._resize_type==RESIZE_ROUNDUP:
             _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
             _f = _fy if _fy > _fx else _fx
             _cv_size = (int(src_size[0]*_f),int(src_size[1]*_f))
             output = (_cv_size, _cv_size, (_f, 0),(_f, 0))
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDUP_CROP:
+        elif self._resize_type==RESIZE_ROUNDUP_CROP:
             _fx, _fy = self._dsize[0]/src_w, self._dsize[1]/src_h
             if _fy > _fx:
                 _f = _fy
@@ -429,13 +424,13 @@ class imResizer:
             output = (_cv_size, self._dsize, (_f, (self._dsize[0]-_cv_size[0])/2),\
                     (_f,(self._dsize[1]-_cv_size[1])/2))
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDDOWN:
+        elif self._resize_type==RESIZE_ROUNDDOWN:
             _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
             _f = _fx if _fy > _fx else _fy
             _cv_size = (int(src_size[0]*_f),int(src_size[1]*_f))
             output = (_cv_size, _cv_size, (_f, 0),(_f, 0))
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDDOWN_FILL_BLACK or self._resize_type==RESIZE_TYPE_ROUNDDOWN_FILL_SELF:
+        elif self._resize_type==RESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==RESIZE_ROUNDDOWN_FILL_SELF:
             _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
             if _fy > _fx:
                 _f = _fx
@@ -457,12 +452,12 @@ class imResizer:
         # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
         param = self._transParam(src.shape[1],src.shape[0])
 
-        if self._resize_type==RESIZE_TYPE_STRETCH \
-            or self._resize_type==RESIZE_TYPE_ROUNDUP \
-            or self._resize_type==RESIZE_TYPE_ROUNDDOWN:
+        if self._resize_type==RESIZE_STRETCH \
+            or self._resize_type==RESIZE_ROUNDUP \
+            or self._resize_type==RESIZE_ROUNDDOWN:
             return cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDUP_CROP:
+        elif self._resize_type==RESIZE_ROUNDUP_CROP:
             cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
             if param[0][0] == param[1][0]:
                 ymin = int(-param[3][1])
@@ -471,7 +466,7 @@ class imResizer:
                 xmin = int(-param[3][0])
                 return cvrimg[xmin:xmin+param[1][0]]
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDDOWN_FILL_BLACK:
+        elif self._resize_type==RESIZE_ROUNDDOWN_FILL_BLACK:
             cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
             img_to_save_shape = list(src.shape)
             img_to_save_shape[0] = param[1][1]
@@ -486,7 +481,7 @@ class imResizer:
                 img_to_save[xmin:xmin+param[1][0]] = cvrimg
                 return img_to_save
 
-        elif self._resize_type==RESIZE_TYPE_ROUNDDOWN_FILL_SELF:
+        elif self._resize_type==RESIZE_ROUNDDOWN_FILL_SELF:
             cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
             img_to_save_shape = list(src.shape)
             img_to_save_shape[0] = param[1][1]
@@ -509,7 +504,6 @@ class imResizer:
 
         else:
             return cv2.resize(src, dsize = param[0], interpolation = self._interpolation)       
-
 
     def pntResize(self,pnt_src,img_src_shape):
         # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
@@ -569,8 +563,6 @@ class cvRect():
     def tobndbox(self):
         import voc as pbvoc
         return pbvoc.bndbox(self.x,self.y,self.x+self.width-1,self.y+self.height-1)
-    
-
 
 if __name__=='__main__':
     ##################################################################
@@ -587,7 +579,7 @@ if __name__=='__main__':
         import tqdm
         img_path = r'G:\obj_mask_10'
         img_list = pb.scan_file_r(img_path,'.jpg.png.jpeg',False)
-        imrszr = pb.img.imResizer(pb.img.RESIZE_TYPE_ROUNDDOWN, (400,400), cv2.INTER_CUBIC)
+        imrszr = pb.img.imResizer(pb.img.RESIZE_ROUNDDOWN, (400,400), cv2.INTER_CUBIC)
         save_path = os.path.join(save_folder_name,'imResizer')
         begin_time_point = time.time()
         for i,one_img_name in tqdm.tqdm(enumerate(img_list)):

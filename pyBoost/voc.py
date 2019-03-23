@@ -1,3 +1,5 @@
+#-*-coding:utf-8-*-
+
 # Copyright (c) 2017-present, Facebook, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +25,7 @@
 
 
 import xml.etree.ElementTree as ET
-import pyBoostBase as pbBase
+import pyBoost_base as pbb
 import img as pbimg
 import os
 import random
@@ -92,41 +94,7 @@ class vocXml:
         out.objs = [x.copy() for x in self.objs]
         return out
 
-def splitVocDataset(path, train,val,test):
-    pairs,o1,o2 = pbBase.scan_pair(os.path.join(path,'JPEGImages'),os.path.join(path,'Annotations'),'.jpg.jpeg.png','.xml',False, True)
-    names = [x[1][:-4] for x in pairs]
-    random.shuffle(names)
-    len_names = len(names)
-    len_train = int(len_names*train)
-    len_val = int(len_names*val)
-    len_test = len_names - len_train - len_val
-    len_trainval = len_train+len_val
-    save_path = os.path.join(path,'ImageSets','Main')
-    if os.path.isdir(save_path) is not True:
-        os.makedirs(save_path)
-    with open(os.path.join(save_path,'trainval.txt'),'w') as f_trainval:
-        for i in range(0,len_trainval-1):
-            f_trainval.write(names[i]+'\n')
-        if len_trainval!=0:
-            f_trainval.write(names[len_trainval-1])
-    with open(os.path.join(save_path,'train.txt'),'w') as f_train:
-        for i in range(0,len_train-1):
-            f_train.write(names[i]+'\n')
-        if len_train!=0:
-            f_train.write(names[len_train-1])
-    with open(os.path.join(save_path,'val.txt'),'w') as f_val:
-        for i in range(len_train,len_trainval-1):
-            f_val.write(names[i]+'\n')
-        if len_val!=0:
-            f_val.write(names[len_trainval-1])
-    with open(os.path.join(save_path,'test.txt'),'w') as f_test:
-        for i in range(len_trainval,len_names-1):
-            f_test.write(names[i]+'\n')
-        if len_test!=0:
-            f_test.write(names[len_names-1])
-    return len_train,len_val,len_test
-
-def vocXmlRead(path):
+def xml_read(path):
     #Unimportant infomations will be loaded with try, set default if load fail 
     out = vocXml()
     xml_tree = ET.parse(path) 
@@ -168,7 +136,7 @@ def vocXmlRead(path):
     
     return out
 
-def vocXmlWrite(filename,vocxml_info):
+def xml_write(filename,vocxml_info):
     flag = False
     with open(filename,'w') as xml_file:
         flag = True
@@ -205,9 +173,10 @@ def vocXmlWrite(filename,vocxml_info):
             flag = False
     return flag
 
+
 #inplace
 #return True if nothing is changed
-def adjustBndbox(xml_info):
+def adjust_bndbox(xml_info):
     no_change = True
     for i in range(len(xml_info.objs)-1,-1,-1):
         one_bndbox = xml_info.objs[i]
@@ -232,11 +201,11 @@ class vocResizer(pbimg.imResizer):
         pbimg.imResizer.__init__(self, resize_type, dsize, interpolation)
 
     def xmlResizeInDisk(self, xml_src, xml_dst, path_replace = None):
-        xml_src_info = vocXmlRead(xml_src)
+        xml_src_info = xml_read(xml_src)
         ret,xml_dist_info = self.xmlResize(xml_src_info)
         if ret is not True:
             print('There is no object after resized: '+xml_src)
-        vocXmlWrite(xml_dst,xml_dist_info)
+        xml_write(xml_dst,xml_dist_info)
         return
 
     def xmlResize(self,xml_src_info,path_replace = None):
@@ -295,7 +264,7 @@ class vocEvaluator:
     def __load_dets(self,dets_file):
         print('Load detections...')
         if dets_file[-4:]=='.txt':
-            out_dets_list = [[x[0],x[1],float(x[2]),int(x[3]),int(x[4]),int(x[5]),int(x[6])] for x in pbBase.scan_text(dets_file)]
+            out_dets_list = [[x[0],x[1],float(x[2]),int(x[3]),int(x[4]),int(x[5]),int(x[6])] for x in pbb.scan_text(dets_file)]
             out_dets_cls_name = list(set([x[1] for x in out_dets_list]))
             out_dets_img_name = list(set([x[0] for x in out_dets_list]))
         else:
@@ -350,12 +319,12 @@ class vocEvaluator:
                 recs = pickle.load(f)
         else:
             # load annots
-            anno_name_list = pbBase.scan_file(annotations_path,'.xml',False,True)
+            anno_name_list = pbb.scan_file(annotations_path,'.xml',False,True)
             recs = {}
             print('Reading annotations... ')
             p_vocXmlIO = vocXmlIO([os.path.join(annotations_path,x) for x in anno_name_list],False,3000)
             for anno_name in tqdm(anno_name_list):
-                #recs[anno_name[:-4]] = vocXmlRead(os.path.join(annotations_path,anno_name))
+                #recs[anno_name[:-4]] = xml_read(os.path.join(annotations_path,anno_name))
                 recs[anno_name[:-4]] = p_vocXmlIO.read()
             p_vocXmlIO.waitEnd()
                 #if i % 100 == 0:
@@ -692,7 +661,7 @@ def exIouMatrix(bbs1,bbs2):
 #ONECLASS: if 'detFile' have no 'class', you can set 'class' by this parameter
 def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
     imgFolder = os.path.split(imgPath)[1]
-    detFileInfo = pbBase.scan_text(detFile)
+    detFileInfo = pbb.scan_text(detFile)
 
     boxes_dict = {}
     if ONECLASS=='':
@@ -721,7 +690,7 @@ def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
             frontName = os.path.splitext(key)[0]
             xmlSavePath = os.path.join(savePath,frontName+'.xml')
             adjustBndbox(p_vocXml)
-            vocXmlWrite(xmlSavePath,p_vocXml)
+            xml_write(xmlSavePath,p_vocXml)
     else:
         for key in boxes_dict:
             imgFullName = key+'.jpg'
@@ -733,7 +702,7 @@ def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
                                         for x in boxes_dict[key]])
             xmlSavePath = os.path.join(savePath,key+'.xml')
             adjustBndbox(p_vocXml)
-            vocXmlWrite(xmlSavePath,p_vocXml)
+            xml_write(xmlSavePath,p_vocXml)
 
 
 
@@ -750,7 +719,7 @@ if __name__=='__main__':
         read_path = r'E:\fusion\frcnn_hand'
         xml_file_name = pb.scan_file_r(read_path,'.xml',False,True)
         for one in xml_file_name:
-            xml_info = pb.voc.vocXmlRead(os.path.join(read_path,one))
+            xml_info = pb.voc.xml_read(os.path.join(read_path,one))
             flag = pb.voc.adjustBndbox(xml_info)
             if flag!=0:
                 print('['+str(flag)+'], path = '+ one)

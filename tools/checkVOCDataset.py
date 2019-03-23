@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 import sys
 import os
 __pyBoost_root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,7 +35,7 @@ def check_voc(voc_root_path,to_check_size):
     bad_img_size_list = []
     for img_path, xml_path in tqdm.tqdm(pairs,ncols=55):
         #read xml
-        xml = pb.voc.vocXmlRead(xml_path)
+        xml = pb.voc.xml_read(xml_path)
         #check whether size matched
         if to_check_size:
             img_shape = cv2.imread(img_path).shape
@@ -45,13 +46,13 @@ def check_voc(voc_root_path,to_check_size):
                 bad_img_size_list.append((img_shape, xml, xml_path))
                 continue
         #check voc
-        no_change = pb.voc.adjustBndbox(xml)==0
+        no_change = pb.voc.adjust_bndbox(xml)==0
         #move no obj or save changed
         if len(xml.objs)==0:#no obj
             shutil.move(img_path, move_jpeg_dir)
             shutil.move(xml_path, move_anno_dir)
         elif no_change==False:#is changed
-            pb.voc.vocXmlWrite(xml_path,xml)            
+            pb.voc.xml_write(xml_path,xml)            
 
     #rmdir if is empty
     try:
@@ -89,7 +90,7 @@ def countVoc(voc_root_path):
         count = 0
         obj_dict = {}
         for img_path,xml_path in pairs:
-            for obj in pb.voc.vocXmlRead(xml_path).objs:
+            for obj in pb.voc.xml_read(xml_path).objs:
                 if obj_dict.get(obj.name) is None:
                     obj_dict[obj.name] = 1
                 else:
@@ -112,7 +113,7 @@ def cutVoc(voc_root_path,rate=None):
     save_path_dict = {}
     for img_path, xml_path in tqdm.tqdm(pairs,ncols=55):
         #read
-        xml = pb.voc.vocXmlRead(xml_path)
+        xml = pb.voc.xml_read(xml_path)
         if len(xml.objs)==0:
             continue
         img = cv2.imread(img_path)

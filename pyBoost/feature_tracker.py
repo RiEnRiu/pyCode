@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 """
     SORT: A Simple, Online and Realtime Tracker
     Copyright (C) 2016 Alex Bewley alex@dynamicdetection.com

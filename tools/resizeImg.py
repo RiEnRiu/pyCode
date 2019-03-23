@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 import sys
 import os
 __pyBoost_root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,8 +29,10 @@ if __name__=='__main__':
         if(str_in !='Y' and str_in !='y'):
             sys.exit('user quit')
 
-    file_relative = pb.scan_file(args.dir, '.jpg.png.jpeg', False,True) if args.recursion=='NOT_MENTIONED' else \
-                    pb.scan_file_r(args.dir, '.jpg.png.jpeg', False,True)
+    if args.recursion=='NOT_MENTIONED':
+        file_relative = pb.scan_file(args.dir, '.jpg.png.jpeg', False,True)  
+    else:
+        pb.scan_file_r(args.dir, '.jpg.png.jpeg', False,True)
 
     if(args.save is None):
         read_img_list = [os.path.join(args.dir,x) for x in file_relative]

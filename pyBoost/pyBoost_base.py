@@ -1,4 +1,5 @@
 #-*-coding:utf-8-*-
+
 import os
 import threading
 import time
@@ -231,7 +232,7 @@ def makedirs(path):
     return
 
 
-class ProductionLineWorker:
+class productionLineWorker:
     def __init__(self, func, maxsize=0, flow_type = 'FIFO', refresh_HZ = 1000):
         if hasattr(func, '__call__')==False:
             raise TypeError('func must be function class.')
@@ -241,7 +242,7 @@ class ProductionLineWorker:
         self.refresh_HZ = refresh_HZ
 
 #TODO make it more useful
-class ProductionLine:
+class productionLine:
     def __init__(self, workers, maxsize = 0, flow_type='FIFO'):
         # param
         self._output_maxsize = maxsize
@@ -254,7 +255,7 @@ class ProductionLine:
         # data queue        
         _q_list = []
         for i,x in enumerate(self._workers):
-            # x = ProductionLineWorker()
+            # x = productionLineWorker()
             if x.flow_type=='FIFO':
                 _q_list.append(queue.Queue(x.maxsize))
             elif x.flow_type=='LIFO':
@@ -266,7 +267,7 @@ class ProductionLine:
         elif x.flow_type=='LIFO':
             _q_list.append(queue.LifoQueue(maxsize))
         else:
-            raise TypeError('Unknown type in ProductionLine.flow_type=={0}'.format(flow_type))
+            raise TypeError('Unknown type in productionLine.flow_type=={0}'.format(flow_type))
         self._q_list = _q_list
 
         # flags
@@ -284,7 +285,7 @@ class ProductionLine:
         # thread
         p_thread = []
         for i in range(self._num_workers):
-            p_thread.append(threading.Thread(target=ProductionLine.thread_function,args=(self,i),daemon=True))
+            p_thread.append(threading.Thread(target=productionLine.thread_function,args=(self,i),daemon=True))
         for p in p_thread:
             p.start()
         self._p_thread = p_thread
@@ -313,9 +314,9 @@ class ProductionLine:
     def put(self,*data):
         self._put_mutex.acquire()
         if self._have_joined:
-            raise RuntimeError('ProductionLine has been joined.')
+            raise RuntimeError('productionLine has been joined.')
         elif len(self._q_list)==0:
-            raise RuntimeError('no worker in ProductionLine.')
+            raise RuntimeError('no worker in productionLine.')
         else:
             self._q_list[0].put(data)
         self._put_mutex.release()
@@ -420,7 +421,7 @@ if __name__=='__main__':
 
 
 
-    def test_ProductionLine():
+    def test_productionLine():
         import cv2
         import numpy as np
         def readimg(img_path,i):
@@ -451,10 +452,10 @@ if __name__=='__main__':
 
         begin = time.time()
 
-        workers = [pb.ProductionLineWorker(readimg,30),\
-                   pb.ProductionLineWorker(dealimg,30),\
-                   pb.ProductionLineWorker(saveimg,30)]
-        p_line = pb.ProductionLine(workers)
+        workers = [pb.productionLineWorker(readimg,30),\
+                   pb.productionLineWorker(dealimg,30),\
+                   pb.productionLineWorker(saveimg,30)]
+        p_line = pb.productionLine(workers)
         saved_indices = []    
         for i in range(720):
             p_line.put('',i)
@@ -480,5 +481,5 @@ if __name__=='__main__':
     save_folder_name = 'pyBoost_test_output'
     test_scan()
     #test_FPS()
-    #test_ProductionLine()
+    #test_productionLine()
 

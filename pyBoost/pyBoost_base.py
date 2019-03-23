@@ -1,29 +1,31 @@
+#-*-coding:utf-8-*-
 import os
 import threading
 import time
 import queue
 
 
-def scan_folder(path):
-    if os.path.isdir(path) == False:
-        raise ValueError('It is not valid path: '+path)
-        return []
-    return [x for x in os.listdir(path) if os.path.isdir(os.path.join(path,x))]
 
+def scan_folder(dir):
+    if os.path.isdir(dir) == False:
+        raise ValueError('It is not valid path: '+dir)
+        return []
+    return [x for x in os.listdir(dir) if os.path.isdir(os.path.join(dir,x))]
 
 # this.splitext('123.txt') ->  ['123', '.txt'] ,    the same as os.path.splitext()
 # this.splitext('.txt') ->  ['', '.txt']       , different from os.path.splitext()
 # this.splitext('123.') ->  ['123', '']        , different from os.path.splitext()
 # this.splitext('123') ->  ['123', '']         ,    the same as os.path.splitext()
-def splitext(fileFullName):
-    if fileFullName[-1]=='.':
-        return fileFullName,''
+def splitext(file_full_name):
+    if file_full_name[-1]=='.':
+        return file_full_name,''
     else:
-        dot = fileFullName.rfind('.')
+        dot = file_full_name.rfind('.')
         if dot==-1:
-            return fileFullName,''
+            return file_full_name,''
         else:
-            return fileFullName[:dot],fileFullName[dot:]
+           file_full_name[:dot],file_full_name[dot:]
+
 
 def __get_exts_set(exts):
     if exts is None:
@@ -37,81 +39,90 @@ def __get_exts_set(exts):
     return exts_set
 
 # exts is not case sensitive 
-def scan_file(path,exts=None,with_root_path=True,with_ext=True):
-    if os.path.isdir(path) == False:
-        raise ValueError('It is not valid path: '+path)
+def scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
+    if os.path.isdir(dir) == False:
+        raise ValueError('It is not valid dir: '+dir)
         return []
-    dirs = os.listdir(path)
-    all_file_full_name = [x for x in dirs if os.path.isfile(os.path.join(path,x))]
     exts_set = __get_exts_set(exts)
 
-    if exts_set is None:
-        if with_root_path==True and with_ext==True:
-            return [os.path.join(path,x) for x in all_file_full_name]
-        elif with_root_path==False and with_ext==True:
-            return all_file_full_name
-        elif with_root_path==True and with_ext==False:
-            return [os.path.join(path, splitext(x)[0]) for x in all_file_full_name]
-        else:# elif with_root_path==False and with_ext==False:
-            return [splitext(x)[0] for x in all_file_full_name]
-    else:
-        sp_file = [splitext(x) for x in all_file_full_name]
-        if with_root_path==True and with_ext==True:
-            return [os.path.join(path,x) \
-                for i,x in enumerate(all_file_full_name)\
-                    if sp_file[i][1] in exts_set]
-        elif with_root_path==False and with_ext==True:
-            return [x \
-                for i,x in enumerate(all_file_full_name)\
-                    if sp_file[i][1] in exts_set]
-        elif with_root_path==True and with_ext==False:
-            return [os.path.join(path,x[0]) \
-                for x in sp_file\
-                    if x[1] in exts_set]
-        else:# elif with_root_path==False and with_ext==False:
-            return [x[0] \
-                for x in sp_file\
-                    if x[1] in exts_set]
+    contents = os.listdir(dir)
+    contents_full_path = [os.path.join(dir,x) for x in contents]
+    files_name, files_full_path = [], []
+    for c,cf in zip(contents,contents_full_path):
+        if  os.path.isfile(cf):
+            files_name.append(c)
+            files_full_path.append(cf)
 
-def __do_scan_file_r(path, output, with_root_path, relative_path = ''):
-    true_root = os.path.join(path,relative_path)
-    all = os.listdir(true_root)
-    for x in all:
-        path_x = os.path.join(true_root,x)
-        if os.path.isdir(path_x):
-            __do_scan_file_r(path,output,with_root_path,os.path.join(relative_path,x))
-        elif with_root_path==True:
-            output.append(path_x)
+    if exts_set is None:
+        if with_root_dir==True and with_ext==True:
+            return files_full_path
+        elif with_root_dir==False and with_ext==True:
+            return files_name
+        elif with_root_dir==True and with_ext==False:
+            return [splitext(x)[0] for x in files_full_path]
+        else:# elif with_root_dir==False and with_ext==False:
+            return [splitext(x)[0] for x in files_name]
+    else:
+        if with_root_dir==True and with_ext==True:
+            return [x for x in files_full_path if splitext(x)[1] in exts_set]
+        elif with_root_dir==False and with_ext==True:
+            return [x for x in files_name if splitext(x)[1] in exts_set]
+        elif with_root_dir==True and with_ext==False:
+            sp_file = [splitext(x) for x in files_full_path]
+            return [front for front,ext in sp_file if ext in exts_set]
+        else:# elif with_root_dir==False and with_ext==False:
+            sp_file = [splitext(x) for x in files_name]
+            return [front for front,ext in sp_file if ext in exts_set]
+
+def __do_deep_scan_file(dir, output, with_root_dir, relative_path = ''):
+    this_root = os.path.join(dir,relative_path)
+    contents = os.listdir(this_root)
+    contents_full_path = [os.path.join(this_root,x) for x in contents]
+    files_name = []
+    folders_name = []
+    files_full_path = []
+    folders_full_path = []
+    for c,cf in zip(contents,contents_full_path):
+        if os.path.isfile(cf):
+            files_name.append(c)
+            files_full_path.append(cf)
         else:
-            output.append(os.path.join(relative_path, x))
+            folders_name.append(c)
+            folders_full_path.append(cf)
+
+    if with_root_dir:
+        output.extend(files_full_path)  
+    else:
+        output.extend([os.path.join(relative_path, x) for x in files_name])
+
+    for folder in folders_full_path:
+        __do_deep_scan_file(dir,output,with_root_dir,os.path.join(relative_path,folder))
+
     return
 
-
-def scan_file_r(path,exts=None,with_root_path=True,with_ext=True):
-    if os.path.isdir(path) == False:
-        raise ValueError('It is not valid path: '+path)
+def deep_scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
+    if os.path.isdir(dir) == False:
+        raise ValueError('It is not valid path: '+dir)
         return []
-    
-    all_file_with_ext = []
-    __do_scan_file_r(path,all_file_with_ext, with_root_path)
-    exts_set = __get_exts_set(exts)
+    exts_set = __get_exts_set(exts)    
+
+    files_path = []
+    __do_deep_scan_file(dir,files_path, with_root_dir)
    
     if exts_set is None:
+        return 
         if with_ext==True:
-            return all_file_with_ext
+            return files_path
         else:
-            return [splitext(x)[0] for x in all_file_with_ext]
+            return [splitext(x)[0] for x in files_path]
     else:
-        sp_file = [splitext(x) for x in all_file_with_ext]
-
+        sp_file = [splitext(x) for x in files_path]
         if with_ext==True:
-            return [x for i,x in enumerate(all_file_with_ext)\
-                          if sp_file[i][1] in exts_set]
+            return [x for x in files_path if splitext(x)[1] in exts_set]
         else:
-            return [x[0] for x in sp_file\
-                             if x[1] in exts_set]
+            return [front for front,ext in sp_file if ext in exts_set]
 
-def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
+def scan_pair(dir1,dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     if exts1 is None or exts2 is None:
         raise ValueError('\"ext1\" and \"ext2\" in funsion \"scan_pair()\" must be set.')
         return [],[],[]
@@ -119,7 +130,7 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
     exts_set1 = __get_exts_set(exts1)
     exts_set2 = __get_exts_set(exts2)
 
-    file1 = scan_file(path1,None,False,True)
+    file1 = scan_file(dir1,None,False,True)
     sp1 = [splitext(x) for x in file1]
     others1 = []
     for i in range(len(file1)-1,-1,-1):
@@ -128,7 +139,7 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
             file1.pop(i)
             sp1.pop(i)
 
-    file2 = scan_file(path2,None,False,True)
+    file2 = scan_file(dir2,None,False,True)
     sp2 = [splitext(x) for x in file2]
     others2 = []
     for i in range(len(file2)-1,-1,-1):
@@ -141,42 +152,39 @@ def scan_pair(path1,path2,exts1,exts2,with_root_path=True,with_ext=True):
     front2 = {x[0]:i for i,x in enumerate(sp2)}
 
     paired_front = set(front1.keys()) & set(front2.keys())
-    paired_key = [[front1[k],front2[k]] for k in paired_front]
-    others1.extend([file1[i] \
-                for i in (set(range(len(file1)))-set(x[0] for x in paired_key))])
-    others2.extend([file2[i] \
-                for i in (set(range(len(file2)))-set(x[1] for x in paired_key))])
+    paired_index1_set,paired_index2_set = set(),set()
+    paired_index = []
+    for k in paired_front:
+        i1,i2 = front1[k],front2[k]
+        paired_index.append((i1, i2))
+        paired_index1_set.add(i1)
+        paired_index2_set.add(i2)
+    others1.extend([f1 for i1,f1 in enumerate(file1) if i1 not in paired_index1_set])
+    others2.extend([f2 for i2,f2 in enumerate(file2) if i2 not in paired_index2_set])
     
-    if with_root_path==True and with_ext==True:
-        return [[os.path.join(path1,file1[k1]),os.path.join(path2,file2[k2])] \
-             for k1,k2 in paired_key],\
-               [os.path.join(path1,x) for x in others1],\
-               [os.path.join(path2,y) for y in others2]
-    elif with_root_path==False and with_ext==True:
-        return [[file1[k1],file2[k2]] for k1,k2 in paired_key],\
+    if with_root_dir==True and with_ext==True:
+        return [[os.path.join(dir1,file1[i1]),os.path.join(dir2,file2[i2])] for i1,i2 in paired_index],\
+               [os.path.join(dir1,o1) for o1 in others1],\
+               [os.path.join(dir2,o2) for o2 in others2]
+    elif with_root_dir==False and with_ext==True:
+        return [[file1[i1],file2[i2]] for i1,i2 in paired_index],\
                others1,\
                others2
-    elif with_root_path==True and with_ext==False:
-        return [[os.path.join(path1,splitext(file1[k1])[0]),\
-                 os.path.join(path2,splitext(file2[k2])[0])] \
-             for k1,k2 in paired_key],\
-               [os.path.join(path1,x) for x in others1],\
-               [os.path.join(path2,y) for y in others2]
+    elif with_root_dir==True and with_ext==False:
+        return [[os.path.join(dir1,splitext(file1[i1])[0]), os.path.join(dir2,splitext(file2[i2])[0])] \
+                   for i1,i2 in paired_key],\
+               [os.path.join(dir1,o1) for o1 in others1],\
+               [os.path.join(dir2,o2) for o2 in others2]
     else:# elif with_root==False and with_ext==False:
-        return [[splitext(file1[k1])[0],splitext(file2[k2])[0]] \
-             for k1,k2 in paired_key],\
+        return [[splitext(file1[i1])[0],splitext(file2[i2])[0]] for i1,i2 in paired_key],\
                others1,\
                others2
 
 def scan_text(path,sep=None):
     with open(path,'r') as fd:
         ls = fd.readlines()
-    if sep is None:
-        sp_line = [s.split() for s in ls]
-    else:
-        sp_line = [s.split(sep) for s in ls]
+    sp_line = [s.split(sep) for s in ls]
     return [l for l in sp_line if len(l)!=0]
-
 
 class FPS:
     def __init__(self, num=30, max_fps = 100000):
@@ -223,7 +231,7 @@ def makedirs(path):
     return
 
 
-class productionLineWorker:
+class ProductionLineWorker:
     def __init__(self, func, maxsize=0, flow_type = 'FIFO', refresh_HZ = 1000):
         if hasattr(func, '__call__')==False:
             raise TypeError('func must be function class.')
@@ -233,7 +241,7 @@ class productionLineWorker:
         self.refresh_HZ = refresh_HZ
 
 #TODO make it more useful
-class productionLine:
+class ProductionLine:
     def __init__(self, workers, maxsize = 0, flow_type='FIFO'):
         # param
         self._output_maxsize = maxsize
@@ -246,7 +254,7 @@ class productionLine:
         # data queue        
         _q_list = []
         for i,x in enumerate(self._workers):
-            # x = productionLineWorker()
+            # x = ProductionLineWorker()
             if x.flow_type=='FIFO':
                 _q_list.append(queue.Queue(x.maxsize))
             elif x.flow_type=='LIFO':
@@ -258,7 +266,7 @@ class productionLine:
         elif x.flow_type=='LIFO':
             _q_list.append(queue.LifoQueue(maxsize))
         else:
-            raise TypeError('Unknown type in productionLine.flow_type=={0}'.format(flow_type))
+            raise TypeError('Unknown type in ProductionLine.flow_type=={0}'.format(flow_type))
         self._q_list = _q_list
 
         # flags
@@ -276,7 +284,7 @@ class productionLine:
         # thread
         p_thread = []
         for i in range(self._num_workers):
-            p_thread.append(threading.Thread(target=productionLine.thread_function,args=(self,i),daemon=True))
+            p_thread.append(threading.Thread(target=ProductionLine.thread_function,args=(self,i),daemon=True))
         for p in p_thread:
             p.start()
         self._p_thread = p_thread
@@ -305,9 +313,9 @@ class productionLine:
     def put(self,*data):
         self._put_mutex.acquire()
         if self._have_joined:
-            raise RuntimeError('productionLine has been joined.')
+            raise RuntimeError('ProductionLine has been joined.')
         elif len(self._q_list)==0:
-            raise RuntimeError('no worker in productionLine.')
+            raise RuntimeError('no worker in ProductionLine.')
         else:
             self._q_list[0].put(data)
         self._put_mutex.release()
@@ -335,7 +343,7 @@ class productionLine:
         self._put_mutex.release()
         return 
 
-    def waitFinish(self):
+    def wait_finish(self):
         self._put_mutex.acquire()
         for i in range(len(self._q_list)-1):
             worker = self._workers[i]
@@ -412,7 +420,7 @@ if __name__=='__main__':
 
 
 
-    def test_productionLine():
+    def test_ProductionLine():
         import cv2
         import numpy as np
         def readimg(img_path,i):
@@ -443,17 +451,17 @@ if __name__=='__main__':
 
         begin = time.time()
 
-        workers = [pb.productionLineWorker(readimg,30),\
-                   pb.productionLineWorker(dealimg,30),\
-                   pb.productionLineWorker(saveimg,30)]
-        p_line = pb.productionLine(workers)
+        workers = [pb.ProductionLineWorker(readimg,30),\
+                   pb.ProductionLineWorker(dealimg,30),\
+                   pb.ProductionLineWorker(saveimg,30)]
+        p_line = pb.ProductionLine(workers)
         saved_indices = []    
         for i in range(720):
             p_line.put('',i)
             ret,got = p_line.get()
             if ret:
                 saved_indices.append(got)
-        p_line.waitFinish()
+        p_line.wait_finish()
         ret,got = p_line.get()
         while(ret):
             saved_indices.append(got)
@@ -472,5 +480,5 @@ if __name__=='__main__':
     save_folder_name = 'pyBoost_test_output'
     test_scan()
     #test_FPS()
-    #test_productionLine()
+    #test_ProductionLine()
 

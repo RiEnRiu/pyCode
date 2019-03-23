@@ -30,7 +30,7 @@
     <Compile Include="feature_tracker.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="pyBoostBase.py">
+    <Compile Include="pyBoost_base.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="img.py">

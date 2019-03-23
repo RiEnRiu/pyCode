@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import math
 import threading
+import random
+
 
 
 #Rotate
@@ -43,12 +45,12 @@ def rotate(img,*angles):
     if len_angles==0:
         raise ValueError('There must be at least 1 in \"angles\"')
         return None
-    elif len_angles==1:
-        return __rotate_one(img,angles)
+    output = []
+    for angle in angles:
+        output.append(__rotate_one(img,angle))
+    if len_angles == 1:
+        return output[0]
     else:
-        output = []
-        for angle in angles:
-            output.append(__rotate_one(img,angles))
         return output
            
 #Flip
@@ -85,12 +87,12 @@ def crop(img,*rates):
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    elif len_rates==1:
-        return __crop_one(img,rates)
+    output = []
+    for rate in rates:
+        output.append(__crop_one(img,rate))
+    if len_rates == 1:
+        return output[0]
     else:
-        output = []
-        for rate in rates:
-            output.append(__crop_one(img,rate))
         return output
 
 #Affine
@@ -135,12 +137,12 @@ def affine(img,*rates):
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    elif len_rates==1:
-        return __affine_one(img,random.randint(0,1),rates)
+    output = []
+    for rate in rates:
+        output.append(__affine_one(img,random.randint(0,1),rate))
+    if len_rates == 1:
+        return output[0]
     else:
-        output = []
-        for rate in rates:
-            output.append(__affine_one(img,random.randint(0,1),rate))
         return output
       
 def affineX(img,*rates):
@@ -148,25 +150,26 @@ def affineX(img,*rates):
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    elif len_rates==1:
-        return __affine_one(img,True,rates)
+    output = []
+    for rate in rates:
+        output.append(__affine_one(img,True,rate))
+    if len_rates == 1:
+        return output[0]
     else:
-        output = []
-        for rate in rates:
-            output.append(__affine_one(img,True,rate))
         return output
+
         
 def affineY(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    elif len_rates==1:
-        return __affine_one(img,False,rates)
+    output = []
+    for rate in rates:
+        output.append(__affine_one(img,False,rate))
+    if len_rates == 1:
+        return output[0]
     else:
-        output = []
-        for rate in rates:
-            output.append(__affine_one(img,False,rate))
         return output
 
 #Noise
@@ -188,25 +191,28 @@ def __add_noise_one(img,rate,is_4c):
         return added_noise
 
 def add_noise(img,*rates):
-    output = []
-    is_4c = len(img.shape) == 3
-    if is_4c:
-        is_4c = img.shape[2] == 4
-
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    elif len_rates==1:
-        return __add_noise_one(img,rates,is_4c)
+    is_4c = len(img.shape) == 3
+    if is_4c:
+        is_4c = img.shape[2] == 4
+    output = []
+    for rate in rates:
+        output.append(__add_noise_one(img,rate,is_4c))
+    if len_rates == 1:
+        return output[0]
     else:
-        output = []
-        for rate in rates:
-            output.append(__add_noise_one(img,rate,is_4c))
         return output
 
 #Hue
-def adjust_hue(img,anlges):
+def adjust_hue(img,*anlges):
+    len_anlges = len(anlges)
+    if len_anlges==0:
+        raise ValueError('There must be at least 1 in \"anlges\"')
+        return None
+
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -228,10 +234,18 @@ def adjust_hue(img,anlges):
         temp_hls[:,:,0] = f_temp_h
         one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
         output.append(one_output)
-    return output
+
+    if len_anlges==1:
+        return output[0]
+    else:
+        return output
 
 #Lightness
-def adjust_lightness(img,rates):
+def adjust_lightness(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -251,10 +265,18 @@ def adjust_lightness(img,rates):
         temp_hls[:,:,1] = f_temp_l*255.0
         one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
         output.append(one_output)
-    return output
+
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
 #Saturation
-def adjust_saturation(img,rates):
+def adjust_saturation(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     is_4c = img.shape[2] == 4
     if is_4c:
         bgr = img[:,:,0:3]
@@ -275,7 +297,11 @@ def adjust_saturation(img,rates):
         temp_hls[:,:,2] = f_temp_s*255.0
         one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
         output.append(one_output.copy())
-    return output
+
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
 #Perspective
 def __perspective_one(img,type,rate):
@@ -314,62 +340,123 @@ def __perspective_one(img,type,rate):
     r = cv2.getPerspectiveTransform(src,dist)
     return cv2.warpPerspective(img,r,(img_cols, img_rows))
 
-def perspective(img,rates):
-    type_erum = ('U','UR','R','DR','D','DL','L','UL')
+def perspective(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
-    type_np = np.random.randint(0,7,len(rates),np.int)
-    #print(type_erum[type_np[0]])
-    for i in range(len(rates)):
-        output.append(__perspective_one(img,type_erum[type_np[i]],rates[i]))
-    return output
+    rand_type = random.choices(('U','UR','R','DR','D','DL','L','UL'),k=len(rates))
+    for t,rate in zip(rand_type,rates):
+        output.append(__perspective_one(img,t,rate))
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveU(img,rates):
+def perspectiveU(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'U',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveUR(img,rates):
+def perspectiveUR(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'UR',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveR(img,rates):
+def perspectiveR(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'R',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveDR(img,rates):
+def perspectiveDR(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'DR',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveD(img,rates):
+def perspectiveD(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'D',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveDL(img,rates):
+def perspectiveDL(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'DL',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveL(img,rates):
+def perspectiveL(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'L',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
-def perspectiveUL(img,rates):
+def perspectiveUL(img,*rates):
+    len_rates = len(rates)
+    if len_rates==0:
+        raise ValueError('There must be at least 1 in \"rates\"')
+        return None
     output = []
     for rate in rates:
         output.append(__perspective_one(img,'UL',rate))
-    return output
+    if len_rates==1:
+        return output[0]
+    else:
+        return output
 
 
 #class RESIZE_TYPE:
@@ -571,14 +658,13 @@ if __name__=='__main__':
     import sys
     sys.path.append('../')
     import pyBoost as pb
-    print(pb.img.imResizer)
 
     def test_imResizer(save_folder_name):
         import os
         import time
         import tqdm
         img_path = r'G:\obj_mask_10'
-        img_list = pb.scan_file_r(img_path,'.jpg.png.jpeg',False)
+        img_list = pb.deep_scan_file(img_path,'.jpg.png.jpeg',False)
         imrszr = pb.img.imResizer(pb.img.RESIZE_ROUNDDOWN, (400,400), cv2.INTER_CUBIC)
         save_path = os.path.join(save_folder_name,'imResizer')
         begin_time_point = time.time()

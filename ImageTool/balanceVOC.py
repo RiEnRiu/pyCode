@@ -1,7 +1,7 @@
 
 import sys
 sys.path.append('../Common')
-from pyBoost import *
+from pyBoost import scanner
 import numpy as np
 import xml.etree.ElementTree as ET
 
@@ -106,6 +106,58 @@ def balanceVOC_greedy(A,std_var_thresh):
         np_obj_count = np.matmul(np_A_t,np_solution)
     return np_solution.tolist()
  
+
+def balanceVOC_GA(A,m,iter):
+    np_A_t = np.array(A).transpose()
+    m_np_solution = np.random.randint(0,2,(len(A),len(np_A_t)))
+    m_np_solution[:,-1] = 1
+    np_obj_count = np.matmul(np_A_t,m_np_solution)
+    num_min = np_obj_count[:,-1].min()
+    best_solution = m_np_solution[:,-1].copy()
+    best_solution_scores = -best_solution.std()-abs(num_min - best_solution.mean())
+    m,n = m_np_solution.shape
+    variate_rate = 0.003
+    for i in range(iter):
+        fathers = m_np_solution.copy()
+        #Assessment
+        counts = np.matmul(np_A_t, fathers)
+        scores = np.mat([-counts[:,i].std()-abs(num_min - counts[:,i].mean()) for i in range(counts.shape[1])])
+        #best
+        this_best_index = np.argmax(scores)
+        this_best_solution = fathers[:,this_best_index].copy()
+        this_best_solution_scores = scores[this_best_index]
+        print(num_min,this_best_solution.mean(),this_best_solution.std())
+        if(this_best_solution_scores>best_solution_scores):
+            best_solution = this_best_solution
+            best_solution_scores = this_best_solution_scores
+        exp_scores = np.exp(scores)
+        sum_exp_scores = exp_scores.sum()
+        probability = exp_scores/sum_exp_scores#softmax
+        cum_prob = probability.cumsum()
+        #select and breed
+        select_inds = np.random.random(n*2)
+        _be_selected = cum_prob.tile((n*2,1)) - select_inds
+        _be_selected[_be_selected>0] = 1
+        inds = _be_selected.argmax(1).reshape(n,2)
+        for i in range(n):
+            cross_site = int(np.random.random()*m)
+            i1 = inds[i,0]
+            i2 = inds[i,1]
+            m_np_solution[:cross_site+1,i] = fathers[:,i1]
+            m_np_solution[cross_site+1:,i] = fathers[:,i2]
+        #variation
+        variate_site = np.random.random(m_np_solution.shape)<variate_rate
+        m_np_solution[variate_site] = (m_np_solution[variate_site]+1)%2
+        
+    return best_solution
+
+
+        
+
+
+
+
+
 
 if __name__=='__main__':
 

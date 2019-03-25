@@ -439,10 +439,11 @@ class imShowerThread:
             imShowerThread._brk_show_thread = False
             imShowerThread._p_show_thread = threading.Thread(target=imShowerThread.show_thread_fun,daemon=True)
             imShowerThread._p_show_thread.start()
-        this_img_to_show = np.zeros(mat.shape,mat.dtype)
-        this_img_to_show = this_img_to_show + mat
+        # low donw the CPU usage
+        # this_img_to_show = np.zeros(mat.shape,mat.dtype)
+        # this_img_to_show = this_img_to_show + mat
+        this_img_to_show = mat.copy()
         imShowerThread._img_dict[winname] = this_img_to_show
-        # print(imShowerThread._destroy_set,set(imShowerThread._img_dict.keys()))
         return
 
     def release():

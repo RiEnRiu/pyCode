@@ -36,7 +36,7 @@ class _VideoCaptureBase():
     def set(self, propId, value):
         return self._cvCap.set(propId,value)
     
-class VideoCaptureThread_with_base(_VideoCaptureBase):
+class VideoCaptureThread(_VideoCaptureBase):
     def __init__(self, param=None,refresh_HZ=10000):
         _VideoCaptureBase.__init__(self,param)
         self._refresh_HZ = refresh_HZ
@@ -88,9 +88,9 @@ class VideoCaptureThread_with_base(_VideoCaptureBase):
         return
 
 
-class VideoCaptureThreadRelink_with_base(VideoCaptureThread_with_base):
+class VideoCaptureThreadRelink(VideoCaptureThread):
     def __init__(self, param, refresh_HZ, heartbeat_seconds=1):
-        VideoCaptureThread_with_base.__init__(self,param)
+        VideoCaptureThread.__init__(self,param)
         self._param = param
         self._refresh_HZ = refresh_HZ
         self._heartbeat_seconds = heartbeat_seconds
@@ -98,21 +98,21 @@ class VideoCaptureThreadRelink_with_base(VideoCaptureThread_with_base):
         self._linked = self.isOpened()
         self._brk_reopen_thread = False
         self._p_reopen_thread = threading.Thread(\
-            target=VideoCaptureThreadRelink_with_base.reopen_thread_fun, args=(self,), daemon=True)
+            target=VideoCaptureThreadRelink.reopen_thread_fun, args=(self,), daemon=True)
         self._p_reopen_thread.start()
         self._release_lock = threading.Lock()
 
     def reopen_thread_fun(self):
         while (self._brk_reopen_thread == False):
             if self._linked == False:
-                VideoCaptureThread_with_base.release(self)
+                VideoCaptureThread.release(self)
                 try:
-                    VideoCaptureThread_with_base.__init__(self,self._param, self._refresh_HZ)
+                    VideoCaptureThread.__init__(self,self._param, self._refresh_HZ)
                 except Exception as e:
-                    VideoCaptureThread_with_base.__init__(self)
+                    VideoCaptureThread.__init__(self)
                 if self.isOpened():
                     for k in self._set_dict:
-                        VideoCaptureThread_with_base.set(self, k, self._set_dict[k])
+                        VideoCaptureThread.set(self, k, self._set_dict[k])
                 self._linked = self.isOpened()
             time.sleep(self._heartbeat_seconds)
         return
@@ -122,7 +122,7 @@ class VideoCaptureThreadRelink_with_base(VideoCaptureThread_with_base):
         if self._linked:
             ret, img = self.read()
             if ret == False:
-                VideoCaptureThread_with_base.release(self)
+                VideoCaptureThread.release(self)
                 self._linked = False
                 ret, img = False, None
         else:
@@ -136,18 +136,18 @@ class VideoCaptureThreadRelink_with_base(VideoCaptureThread_with_base):
         if self._p_reopen_thread is not None:
             self._p_reopen_thread.join()
             self._p_reopen_thread = None
-        VideoCaptureThread_with_base.release(self)
+        VideoCaptureThread.release(self)
         self._linked = False
         self._release_lock.release()
         return
 
     def set(self,propId,value):
         self._set_dict[propId] = value
-        return VideoCaptureThread_with_base.set(self,propId,value)
+        return VideoCaptureThread.set(self,propId,value)
 
 
 
-class VideoCaptureRelink_with_base(_VideoCaptureBase):
+class VideoCaptureRelink(_VideoCaptureBase):
     def __init__(self, param, refresh_HZ, heartbeat_seconds=1):
         _VideoCaptureBase.__init__(self,param)
         self._param = param
@@ -157,7 +157,7 @@ class VideoCaptureRelink_with_base(_VideoCaptureBase):
         self._linked = self.isOpened()
         self._brk_reopen_thread = False
         self._p_reopen_thread = threading.Thread(\
-            target=VideoCaptureRelink_with_base.reopen_thread_fun, args=(self,), daemon=True)
+            target=VideoCaptureRelink.reopen_thread_fun, args=(self,), daemon=True)
         self._p_reopen_thread.start()
         self._release_lock = threading.Lock()
 
@@ -208,190 +208,190 @@ class VideoCaptureRelink_with_base(_VideoCaptureBase):
 
 
 
-class VideoCaptureThread:
-    def __init__(self, _cvCap):
-        self.cvCap = _cvCap
-        # self.cvCap = cv2.VideoCapture()
+#class VideoCaptureThread:
+#    def __init__(self, _cvCap):
+#        self.cvCap = _cvCap
+#        # self.cvCap = cv2.VideoCapture()
 
-        self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
-        self._cvCap_read_index = 2
-        self._user_read_index = 0
-        self._cvReadRetAndMat[0] = self.cvCap.read()
-        self._cvReadRetAndMat[1] = self.cvCap.read()
-        self._cvReadRetAndMat[2] = self.cvCap.read()
+#        self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
+#        self._cvCap_read_index = 2
+#        self._user_read_index = 0
+#        self._cvReadRetAndMat[0] = self.cvCap.read()
+#        self._cvReadRetAndMat[1] = self.cvCap.read()
+#        self._cvReadRetAndMat[2] = self.cvCap.read()
 
-        self._brk_read_thread = False
-        self._p_read_thread = threading.Thread( \
-            target=VideoCaptureThread.read_thread_fun, args=(self,), daemon=True)
-        self._p_read_thread.start()
+#        self._brk_read_thread = False
+#        self._p_read_thread = threading.Thread( \
+#            target=VideoCaptureThread.read_thread_fun, args=(self,), daemon=True)
+#        self._p_read_thread.start()
 
-    def read_thread_fun(self):
-        while (self._brk_read_thread == False):
-            this_cvReadRetAndMat = self.cvCap.read()
-            if this_cvReadRetAndMat[0]:
-                self._cvReadRetAndMat[self._cvCap_read_index] = this_cvReadRetAndMat
-                next_cvCap_read_index = self._cvCap_read_index + 1
-                if next_cvCap_read_index == 3:
-                    next_cvCap_read_index = 0
-                if next_cvCap_read_index != self._user_read_index:
-                    self._cvCap_read_index = next_cvCap_read_index
-            else:
-                self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
-                self.cvCap.release()
-                break
-            time.sleep(0.0001)
-        self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
-        self.cvCap.release()
-        # print('have release camera')
-        return
+#    def read_thread_fun(self):
+#        while (self._brk_read_thread == False):
+#            this_cvReadRetAndMat = self.cvCap.read()
+#            if this_cvReadRetAndMat[0]:
+#                self._cvReadRetAndMat[self._cvCap_read_index] = this_cvReadRetAndMat
+#                next_cvCap_read_index = self._cvCap_read_index + 1
+#                if next_cvCap_read_index == 3:
+#                    next_cvCap_read_index = 0
+#                if next_cvCap_read_index != self._user_read_index:
+#                    self._cvCap_read_index = next_cvCap_read_index
+#            else:
+#                self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
+#                self.cvCap.release()
+#                break
+#            time.sleep(0.0001)
+#        self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
+#        self.cvCap.release()
+#        # print('have release camera')
+#        return
 
-    def read(self):
-        ret, image = self._cvReadRetAndMat[self._user_read_index]
-        next_user_read_index = self._user_read_index + 1
-        if next_user_read_index == 3:
-            next_user_read_index = 0
-        if next_user_read_index != self._cvCap_read_index:
-            self._user_read_index = next_user_read_index
-        return ret, image
+#    def read(self):
+#        ret, image = self._cvReadRetAndMat[self._user_read_index]
+#        next_user_read_index = self._user_read_index + 1
+#        if next_user_read_index == 3:
+#            next_user_read_index = 0
+#        if next_user_read_index != self._cvCap_read_index:
+#            self._user_read_index = next_user_read_index
+#        return ret, image
 
-    def release(self):
-        self._brk_read_thread = True
-        if self._p_read_thread is not None:
-            self._p_read_thread.join()
-            self._p_read_thread = None
-        return
-
-
-
-class VideoCaptureThreadRelink:
-    def __init__(self, _open_param, _video_param_dict=None, _default_img=None, _heartbeat_seconds=1):
-        self._open_param = _open_param
-        self._video_param_dict = _video_param_dict
-        self._default_img = _default_img
-        self._heartbeat_seconds = _heartbeat_seconds
-        self._default_frame = (False, _default_img)
-
-        self.cvCap = cv2.VideoCapture(self._open_param)
-        if self.cvCap.isOpened() and self._video_param_dict is not None:
-            for k in self._video_param_dict:
-                self.cvCap.set(k, self._video_param_dict[k])
-        self._p_VideoCaptureThread = VideoCaptureThread(self.cvCap)
-        self._linked = self.cvCap.isOpened()
-
-        self._brk_reopen_thread = False
-        self._p_reopen_thread = threading.Thread(\
-            target=VideoCaptureThreadRelink.reopen_thread_fun, args=(self,), daemon=True)
-        self._p_reopen_thread.start()
-
-    def reopen_thread_fun(self):
-        while self._brk_reopen_thread == False:
-            if self._linked == False:
-                self._p_VideoCaptureThread.release()
-                try:
-                    self.cvCap = cv2.VideoCapture(self._open_param)
-                except Exception as e:
-                    self.cvCap = cv2.VideoCapture()
-                if self.cvCap.isOpened() and self._video_param_dict is not None:
-                    for k in self._video_param_dict:
-                        self.cvCap.set(k, self._video_param_dict[k])
-                self._p_VideoCaptureThread = VideoCaptureThread(self.cvCap)
-                self._linked = self.cvCap.isOpened()
-            time.sleep(self._heartbeat_seconds)
-        return
-
-    def read(self):
-        if self._linked:
-            ret, img = self._p_VideoCaptureThread.read()
-            if ret == False:
-                self._p_VideoCaptureThread.release()
-                self._linked = False
-                ret, img = self._default_frame
-        else:
-            ret, img = self._default_frame
-        return ret, img
-
-    def release(self):
-        self._p_VideoCaptureThread.release()
-        self._brk_reopen_thread = True
-        if self._p_reopen_thread is not None:
-            self._p_reopen_thread.join()
-            self._p_reopen_thread = None
-        self._linked = False
-        return
-
-    def set(self,propId,value):
-        self._video_param_dict[propId] = value
-        return self.cvCap.set(propId,value)
-
-    def get(self):
-        return self.cvCap.get()
-
-    def isOpened(self):
-        return self.cvCap.isOpened()
+#    def release(self):
+#        self._brk_read_thread = True
+#        if self._p_read_thread is not None:
+#            self._p_read_thread.join()
+#            self._p_read_thread = None
+#        return
 
 
-class VideoCaptureRelink:
-    def __init__(self, _open_param, _video_param_dict=None, _heartbeat_seconds=1):
-        self._open_param = _open_param
-        self._video_param_dict = _video_param_dict
-        self._heartbeat_seconds = _heartbeat_seconds
 
-        self._default_frame = (False, None)
+#class VideoCaptureThreadRelink:
+#    def __init__(self, _open_param, _video_param_dict=None, _default_img=None, _heartbeat_seconds=1):
+#        self._open_param = _open_param
+#        self._video_param_dict = _video_param_dict
+#        self._default_img = _default_img
+#        self._heartbeat_seconds = _heartbeat_seconds
+#        self._default_frame = (False, _default_img)
 
-        self.cvCap = cv2.VideoCapture(self._open_param)
-        if self.cvCap.isOpened() and self._video_param_dict is not None:
-            for k in self._video_param_dict:
-                self.cvCap.set(k, self._video_param_dict[k])
-        self._linked = self.cvCap.isOpened()
+#        self.cvCap = cv2.VideoCapture(self._open_param)
+#        if self.cvCap.isOpened() and self._video_param_dict is not None:
+#            for k in self._video_param_dict:
+#                self.cvCap.set(k, self._video_param_dict[k])
+#        self._p_VideoCaptureThread = VideoCaptureThread(self.cvCap)
+#        self._linked = self.cvCap.isOpened()
 
-        self._brk_reopen_thread = False
-        self._p_reopen_thread = threading.Thread(\
-            target=VideoCaptureRelink.reopen_thread_fun, args=(self,), daemon=True)
-        self._p_reopen_thread.start()
+#        self._brk_reopen_thread = False
+#        self._p_reopen_thread = threading.Thread(\
+#            target=VideoCaptureThreadRelink.reopen_thread_fun, args=(self,), daemon=True)
+#        self._p_reopen_thread.start()
 
-    def reopen_thread_fun(self):
-        while (self._brk_reopen_thread == False):
-            if self._linked == False:
-                self.cvCap.release()
-                try:
-                    self.cvCap = cv2.VideoCapture(self._open_param)
-                except Exception as e:
-                    self.cvCap = cv2.VideoCapture()
-                if self.cvCap.isOpened() and self._video_param_dict is not None:
-                    for k in self._video_param_dict:
-                        self.cvCap.set(k, self._video_param_dict[k])
-                self._linked = self.cvCap.isOpened()
-            time.sleep(self._heartbeat_seconds)
-        return
+#    def reopen_thread_fun(self):
+#        while self._brk_reopen_thread == False:
+#            if self._linked == False:
+#                self._p_VideoCaptureThread.release()
+#                try:
+#                    self.cvCap = cv2.VideoCapture(self._open_param)
+#                except Exception as e:
+#                    self.cvCap = cv2.VideoCapture()
+#                if self.cvCap.isOpened() and self._video_param_dict is not None:
+#                    for k in self._video_param_dict:
+#                        self.cvCap.set(k, self._video_param_dict[k])
+#                self._p_VideoCaptureThread = VideoCaptureThread(self.cvCap)
+#                self._linked = self.cvCap.isOpened()
+#            time.sleep(self._heartbeat_seconds)
+#        return
 
-    def read(self):
-        if self._linked:
-            ret, img = self.cvCap.read()
-            if ret == False:
-                self.cvCap.release()
-                self._linked = False
-                ret, img = self._default_frame
-        else:
-            ret, img = self._default_frame
-        return ret, img
+#    def read(self):
+#        if self._linked:
+#            ret, img = self._p_VideoCaptureThread.read()
+#            if ret == False:
+#                self._p_VideoCaptureThread.release()
+#                self._linked = False
+#                ret, img = self._default_frame
+#        else:
+#            ret, img = self._default_frame
+#        return ret, img
 
-    def set(self,propId,value):
-        self._video_param_dict[propId] = value
-        return self.cvCap.set(propId,value)
+#    def release(self):
+#        self._p_VideoCaptureThread.release()
+#        self._brk_reopen_thread = True
+#        if self._p_reopen_thread is not None:
+#            self._p_reopen_thread.join()
+#            self._p_reopen_thread = None
+#        self._linked = False
+#        return
 
-    def release(self):
-        self._brk_reopen_thread = True
-        if self._p_reopen_thread is not None:
-            self._p_reopen_thread.join()
-        self.cvCap.release()
-        self._linked = False
-        return
+#    def set(self,propId,value):
+#        self._video_param_dict[propId] = value
+#        return self.cvCap.set(propId,value)
 
-    def get(self):
-        return self.cvCap.get()
+#    def get(self):
+#        return self.cvCap.get()
 
-    def isOpened(self):
-        return self.cvCap.isOpened()
+#    def isOpened(self):
+#        return self.cvCap.isOpened()
+
+
+#class VideoCaptureRelink:
+#    def __init__(self, _open_param, _video_param_dict=None, _heartbeat_seconds=1):
+#        self._open_param = _open_param
+#        self._video_param_dict = _video_param_dict
+#        self._heartbeat_seconds = _heartbeat_seconds
+
+#        self._default_frame = (False, None)
+
+#        self.cvCap = cv2.VideoCapture(self._open_param)
+#        if self.cvCap.isOpened() and self._video_param_dict is not None:
+#            for k in self._video_param_dict:
+#                self.cvCap.set(k, self._video_param_dict[k])
+#        self._linked = self.cvCap.isOpened()
+
+#        self._brk_reopen_thread = False
+#        self._p_reopen_thread = threading.Thread(\
+#            target=VideoCaptureRelink.reopen_thread_fun, args=(self,), daemon=True)
+#        self._p_reopen_thread.start()
+
+#    def reopen_thread_fun(self):
+#        while (self._brk_reopen_thread == False):
+#            if self._linked == False:
+#                self.cvCap.release()
+#                try:
+#                    self.cvCap = cv2.VideoCapture(self._open_param)
+#                except Exception as e:
+#                    self.cvCap = cv2.VideoCapture()
+#                if self.cvCap.isOpened() and self._video_param_dict is not None:
+#                    for k in self._video_param_dict:
+#                        self.cvCap.set(k, self._video_param_dict[k])
+#                self._linked = self.cvCap.isOpened()
+#            time.sleep(self._heartbeat_seconds)
+#        return
+
+#    def read(self):
+#        if self._linked:
+#            ret, img = self.cvCap.read()
+#            if ret == False:
+#                self.cvCap.release()
+#                self._linked = False
+#                ret, img = self._default_frame
+#        else:
+#            ret, img = self._default_frame
+#        return ret, img
+
+#    def set(self,propId,value):
+#        self._video_param_dict[propId] = value
+#        return self.cvCap.set(propId,value)
+
+#    def release(self):
+#        self._brk_reopen_thread = True
+#        if self._p_reopen_thread is not None:
+#            self._p_reopen_thread.join()
+#        self.cvCap.release()
+#        self._linked = False
+#        return
+
+#    def get(self):
+#        return self.cvCap.get()
+
+#    def isOpened(self):
+#        return self.cvCap.isOpened()
 
 
 class imShowerThread:

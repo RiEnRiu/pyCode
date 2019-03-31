@@ -23,9 +23,15 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="tf_operations.py">
+    <Compile Include="p004_operations.py" />
+    <Compile Include="p010_linearEquations.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="p011_SVD.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="p014_PCA.py" />
+    <Compile Include="p016_BPNetworForMNIST.py" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

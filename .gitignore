@@ -42,3 +42,4 @@ tf_module/tf_module.zip
 pyBoost/pyBoost_test_output/*
 .vs/*
 tools/test_tools/*
+learn_tf/MNIST_data/

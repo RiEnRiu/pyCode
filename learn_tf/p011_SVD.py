@@ -4,7 +4,7 @@
 
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plts
+import matplotlib.pyplot as plt
 
 
 # page = 
@@ -27,24 +27,24 @@ X_tensor = tf.convert_to_tensor(xMatrix,dtype=tf.float32)
 with tf.Session() as sess:
     tf_S,tf_U,tf_Vh = sess.run(tf.svd(X_tensor,full_matrices=False))
 
-plts.figure('tf')
-plts.ion()
+plt.figure('tf')
+plt.ion()
 for i in range(len(text)):
-    plts.text(tf_U[i,0],tf_U[i,1],text[i])
-plts.ylim(-0.8,0.8)
-plts.xlim(-0.8,2.0)
-plts.show()
+    plt.text(tf_U[i,0],tf_U[i,1],text[i])
+plt.ylim(-0.8,0.8)
+plt.xlim(-0.8,2.0)
+plt.show()
 
 # np SVD
 np_U,np_S,np_Vh = np.linalg.svd(xMatrix,full_matrices=False)
 
-plts.figure('np')
-plts.ion()
+plt.figure('np')
+plt.ion()
 for i in range(len(text)):
-    plts.text(np_U[i,0],np_U[i,1],text[i])
-plts.ylim(-0.8,0.8)
-plts.xlim(-0.8,2.0)
-plts.show()
+    plt.text(np_U[i,0],np_U[i,1],text[i])
+plt.ylim(-0.8,0.8)
+plt.xlim(-0.8,2.0)
+plt.show()
 input()
 
 

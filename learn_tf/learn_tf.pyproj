@@ -31,7 +31,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="p014_PCA.py" />
-    <Compile Include="p016_BPNetworForMNIST.py" />
+    <Compile Include="p016_BPNetworForMNIST_customized_grad.py" />
+    <Compile Include="p018_BPNetworForMNIST.py" />
+    <Compile Include="p020_linearRegression.py" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

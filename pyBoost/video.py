@@ -6,11 +6,11 @@ import time
 import os
 
 class _VideoCaptureBase():
-    def __init__(self, param=None):
-        if(param is None):
+    def __init__(self, filename=None):
+        if(filename is None):
             self._cvCap = cv2.VideoCapture()
         else:
-            self._cvCap = cv2.VideoCapture(param)
+            self._cvCap = cv2.VideoCapture(filename)
     
     def get(self,propId):
         return self._cvCap.get(propId)
@@ -37,9 +37,12 @@ class _VideoCaptureBase():
         return self._cvCap.set(propId,value)
     
 class VideoCaptureThread(_VideoCaptureBase):
-    def __init__(self, param=None,refresh_HZ=10000):
-        _VideoCaptureBase.__init__(self,param)
+    def __init__(self, filename=None, delay=0, refresh_HZ=10000):
+        _VideoCaptureBase.__init__(self,filename)
         self._refresh_HZ = refresh_HZ
+        self._delay=delay
+        self._sleep_seconds = 0 if self._delay==0 else self._delay/1000.0
+
         self._cvReadRetAndMat = [(False, None), (False, None), (False, None)]
         self._cvCap_read_index = 2
         self._user_read_index = 0
@@ -78,6 +81,8 @@ class VideoCaptureThread(_VideoCaptureBase):
             next_user_read_index = 0
         if next_user_read_index != self._cvCap_read_index:
             self._user_read_index = next_user_read_index
+        if self._sleep_seconds!=0:
+            time.sleep(self._sleep_seconds)
         return ret, image
 
     def release(self):
@@ -89,11 +94,13 @@ class VideoCaptureThread(_VideoCaptureBase):
 
 
 class VideoCaptureThreadRelink(VideoCaptureThread):
-    def __init__(self, param, refresh_HZ, heartbeat_seconds=1):
-        VideoCaptureThread.__init__(self,param)
-        self._param = param
+    def __init__(self, filename, delay=0,refresh_HZ=10000, heartbeat_seconds=1):
+        VideoCaptureThread.__init__(self,filename)
+        self._filename = filename
         self._refresh_HZ = refresh_HZ
         self._heartbeat_seconds = heartbeat_seconds
+        self._delay = delay
+        self._sleep_seconds = 0 if self._delay==0 else self._delay/1000.0
         self._set_dict = {}
         self._linked = self.isOpened()
         self._brk_reopen_thread = False
@@ -107,7 +114,7 @@ class VideoCaptureThreadRelink(VideoCaptureThread):
             if self._linked == False:
                 VideoCaptureThread.release(self)
                 try:
-                    VideoCaptureThread.__init__(self,self._param, self._refresh_HZ)
+                    VideoCaptureThread.__init__(self,self._filename, self._refresh_HZ)
                 except Exception as e:
                     VideoCaptureThread.__init__(self)
                 if self.isOpened():
@@ -127,6 +134,8 @@ class VideoCaptureThreadRelink(VideoCaptureThread):
                 ret, img = False, None
         else:
             ret, img = False, None
+        if self._sleep_seconds!=0:
+            time.sleep(self._sleep_seconds)
         self._release_lock.release()
         return ret, img
 
@@ -148,11 +157,13 @@ class VideoCaptureThreadRelink(VideoCaptureThread):
 
 
 class VideoCaptureRelink(_VideoCaptureBase):
-    def __init__(self, param, refresh_HZ, heartbeat_seconds=1):
-        _VideoCaptureBase.__init__(self,param)
-        self._param = param
+    def __init__(self, filename, delay=0, refresh_HZ=10000, heartbeat_seconds=1):
+        _VideoCaptureBase.__init__(self,filename)
+        self._filename = filename
         self._refresh_HZ = refresh_HZ
         self._heartbeat_seconds = heartbeat_seconds
+        self._delay = delay
+        self._sleep_seconds = 0 if self._delay==0 else self._delay/1000.0
         self._set_dict = {}
         self._linked = self.isOpened()
         self._brk_reopen_thread = False
@@ -166,7 +177,7 @@ class VideoCaptureRelink(_VideoCaptureBase):
             if self._linked == False:
                 _VideoCaptureBase.release(self)
                 try:
-                    _VideoCaptureBase.__init__(self,self._param, self._refresh_HZ)
+                    _VideoCaptureBase.__init__(self,self._filename, self._refresh_HZ)
                 except Exception as e:
                     _VideoCaptureBase.__init__(self)
                 if self.isOpened():
@@ -186,6 +197,8 @@ class VideoCaptureRelink(_VideoCaptureBase):
                 ret, img = False, None
         else:
             ret, img = False, None
+        if self._sleep_seconds!=0:
+            time.sleep(self._sleep_seconds)
         self._release_lock.release()
         return ret, img
 

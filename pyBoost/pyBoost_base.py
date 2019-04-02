@@ -25,8 +25,7 @@ def splitext(file_full_name):
         if dot==-1:
             return file_full_name,''
         else:
-           file_full_name[:dot],file_full_name[dot:]
-
+           return file_full_name[:dot],file_full_name[dot:]
 
 def __get_exts_set(exts):
     if exts is None:

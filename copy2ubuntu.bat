@@ -29,6 +29,11 @@ mkdir .\ubuntu\interview
 copy .\interview\*.py .\ubuntu\interview
 copy .\interview\ans_card.jpg .\ubuntu\interview
 
+::project learn_tf
+mkdir .\ubuntu\learn_tf
+copy .\learn_tf\*.py .\ubuntu\learn_tf
+copy .\learn_tf\ans_card.jpg .\ubuntu\learn_tf
+
 ::project pyBoost
 mkdir .\ubuntu\pyBoost
 copy .\pyBoost\*.py .\ubuntu\pyBoost

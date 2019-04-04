@@ -75,8 +75,6 @@ if __name__=='__main__':
     parser.add_argument('--show', type = str, default = '[1,1,1]', help = 'format = [date,orgsize,fps], \"[1,1,1]\"')#[B,G,R]
     parser.add_argument('--flow', type = str, default = '[0,0,0]',help = 'format = [flow,color,ring], \"[0,0,0]\"')
 
-
-
     args = parser.parse_args()
 
     if(args.thread == 1):

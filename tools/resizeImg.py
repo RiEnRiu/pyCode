@@ -38,6 +38,7 @@ if __name__=='__main__':
         read_img_list = [os.path.join(args.dir,x) for x in file_relative]
         save_img_list = read_img_list
     else:
+        pb.makedirs(args.save)
         read_img_list = [os.path.join(args.dir,x) for x in file_relative]
         save_img_list = [os.path.join(args.save,x) for x in file_relative]
 
@@ -46,6 +47,6 @@ if __name__=='__main__':
         img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
         rimg = im_rszr.imResize(img)
         cv2.imwrite(save_path,rimg)
-    print('Have resized {0} images.'.format(len(read_img_list)))
+
 
     

@@ -75,3 +75,39 @@ for i in range(10000):
               y:data.test.labels})
         print(res)
 
+
+'''
+s'(x) = s(x) * (1 - s(x))
+
+z1 = x * w1 + b1
+a1 = s(z1)
+z2 = a1 * w2 + b2
+a2 = s(z2)
+
+dloss = a2 - y
+loss = 1/2 * dloss **2
+
+dz2 = d(loss)/d(z2) 
+    = dloss * d(a2)/d(z2)
+    = dloss * d(s(z2))/d(z2)
+    = dloss * s'(z2)
+db2 = d(loss)/d(b2) 
+    = d(loss)/d(z2) * 1
+    = dz2
+dw2 = d(loss)/d(w2) 
+    = d(loss)/d(z2) * a1
+    = dz2 * a1
+da1 = d(loss)/d(a1) 
+    = d(loss)/d(z2) * w2
+    = dz2 * w2
+dz1 = d(loss)/d(z1) 
+    = d(loss)/d(a1) * s'(z1)
+    = da1 * s'(z1)
+db1 = d(loss)/d(b1) 
+    = d(loss)/d(z1) * 1
+    = dz1
+dw1 = d(loss)/d(w1)
+    = d(loss)/d(z1) * x
+    = dz1 * x
+'''
+

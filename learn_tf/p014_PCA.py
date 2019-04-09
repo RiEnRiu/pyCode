@@ -6,6 +6,8 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plts
 
+GPU_CONFIG = tf.ConfigProto()
+GPU_CONFIG.gpu_options.allow_growth=True
 
 # PCA by SVD
 text = ['I','like','enjoy','deep','learning','NLP','flying','.']
@@ -26,7 +28,7 @@ def pca(mat):
     s,u,v = tf.svd(less,full_matrices=True,compute_uv=True)
     s2 = s**2
     variance_ratio = s2/tf.reduce_sum(s2)
-    with tf.Session() as sess:
+    with tf.Session(config=GPU_CONFIG) as sess:
         run = sess.run([variance_ratio])
     return run
 

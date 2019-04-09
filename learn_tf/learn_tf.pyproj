@@ -34,6 +34,9 @@
     <Compile Include="p016_BPNetworForMNIST_customized_grad.py" />
     <Compile Include="p018_BPNetworForMNIST.py" />
     <Compile Include="p020_linearRegression.py" />
+    <Compile Include="p023_HessianMatrix.py" />
+    <Compile Include="p025_determinant.py" />
+    <Compile Include="p026_adam_optimizer.py" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

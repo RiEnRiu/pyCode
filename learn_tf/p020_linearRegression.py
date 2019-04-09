@@ -6,6 +6,9 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
+GPU_CONFIG = tf.ConfigProto()
+GPU_CONFIG.gpu_options.allow_growth=True
+
 # config parameters
 learningRate = 0.01
 trainingEpochs = 1000
@@ -45,7 +48,7 @@ opt = tf.train.GradientDescentOptimizer(learningRate).minimize(loss)
 init = tf.global_variables_initializer()
 
 # run
-with tf.Session() as sess:
+with tf.Session(config=GPU_CONFIG) as sess:
     sess.run(init)
     # fitting the training data
     for epoch in range(trainingEpochs):

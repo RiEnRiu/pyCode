@@ -4,8 +4,7 @@ import numpy as np
 import math
 import threading
 import random
-
-
+import time
 
 #Rotate
 def __rotate_one(img,angle):
@@ -651,6 +650,98 @@ class cvRect():
         import voc as pbvoc
         return pbvoc.bndbox(self.x,self.y,self.x+self.width-1,self.y+self.height-1)
 
+__imshow_img_dict = dict()
+__imshow_destroy_set = set()
+__imshow_p_show_thread = None
+__imshow_waitKey_delay = 10
+__imshow_key_value = -1
+
+
+# once it runs, all images can only show in this thread function
+def show_thread_fun():
+    global __imshow_img_dict
+    global __imshow_destroy_set
+    global __imshow_waitKey_delay
+    global __imshow_key_value
+    while 1:
+        num_win_destroy = 0
+        win_destroy_keys = list(__imshow_destroy_set)
+        for win in win_destroy_keys:
+            if(__imshow_img_dict.get(win) is not None):
+                __imshow_img_dict.pop(win)
+            try:
+                cv2.destroyWindow(win)
+                num_win_destroy += 1
+            except Exception as e:
+                # print(e)
+                __imshow_destroy_set.remove(win)
+        # show
+        num_win_showing = 0
+        win_show_keys = list(__imshow_img_dict.keys())
+        for win in win_show_keys:
+            img = __imshow_img_dict[win]
+            try:
+                cv2.imshow(win,img)
+                num_win_showing += 1
+            except Exception as e:
+                print(e)
+                __imshow_destroy_set.add(win)
+                continue
+        if(num_win_showing==0 and num_win_destroy==0):
+            time.sleep(0.01)
+        else:
+            __imshow_key_value = cv2.waitKey(__imshow_waitKey_delay)
+
+
+def imshow(winname,mat):
+    global __imshow_img_dict
+    global __imshow_p_show_thread
+    if __imshow_p_show_thread is None or __imshow_p_show_thread.is_alive()==False:
+        __imshow_brk_show_thread = False
+        __imshow_p_show_thread = threading.Thread(target=show_thread_fun,daemon=True)
+        __imshow_p_show_thread.start()
+    # low donw the CPU usage
+    # this_img_to_show = np.zeros(mat.shape,mat.dtype)
+    # this_img_to_show = this_img_to_show + mat
+    this_img_to_show = mat.copy()
+    __imshow_img_dict[winname] = this_img_to_show
+    return
+
+def destroyWindow(winname):
+    global __imshow_destroy_set
+    __imshow_destroy_set.add(winname)
+    return
+
+def destroyAllWindows():
+    global __imshow_img_dict
+    global __imshow_destroy_set
+    __imshow_destroy_set.update(__imshow_img_dict.keys())
+    return
+
+def waitKey(delay=None):
+    global __imshow_waitKey_delay
+    global __imshow_key_value
+    __imshow_key_value = -1
+    __imshow_waitKey_delay = delay
+    if delay is None or delay==0:
+        key = -1
+        while key == -1:
+            key = __imshow_key_value
+            time.sleep(0.001)
+        return key
+    else:
+        begin = time.time()
+        end = time.time()
+        key = -1
+        while (end-begin)*1000<delay:
+            key = __imshow_key_value
+            if key !=-1:
+                break
+            else:
+                end = time.time()
+        return key
+        
+
 if __name__=='__main__':
     ##################################################################
     #test module
@@ -678,8 +769,31 @@ if __name__=='__main__':
         print((end_time_point-begin_time_point))
 
     #####################################################################
+
+    def test_imshow():
+        import cv2
+        import numpy as np
+        img = cv2.imread(r'C:\Users\admin\Desktop\chess.jpg')
+        pb.img.imshow('img',img)
+        print(3)
+        time.sleep(1)
+        print(2)
+        time.sleep(1)
+        print(1)
+        key = 0
+        while key!=27:
+            pb.img.imshow('img',img)
+            key = pb.img.waitKey(10)
+            print(key)
+        key = 0
+        while key!=27:
+            pb.img.imshow('img1',img)
+            key = pb.img.waitKey(0)
+            print(key)
+
     save_folder_name = 'pyBoost_test_output'
-    test_imResizer(save_folder_name)
+    #test_imResizer(save_folder_name)
+    test_imshow()
 
 
 

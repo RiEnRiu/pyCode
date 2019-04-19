@@ -44,3 +44,7 @@ pyBoost/pyBoost_test_output/*
 tools/test_tools/*
 learn_tf/MNIST_data/
 ubuntu/*
+ImageTool/v0_2019-04-15_11-51-58/*
+ImageTool/v0_2019-04-15_11-53-6/*
+ImageTool/v1_2019-04-15_11-51-58/*
+ImageTool/v1_2019-04-15_11-53-6/*

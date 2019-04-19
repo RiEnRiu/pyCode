@@ -85,17 +85,18 @@ def record_images(cap_list,save_dir,config):
             if _ret:
                 imgs.append((i,_ret, _img))
                 cv2.imshow('view{0}'.format(i),_img)
-            else:
-                cv2.destroyWindow('view{0}'.format(i))
+            # else:
+            #     cv2.destroyWindow('view{0}'.format(i))
         key = cv2.waitKey(1)
         if key==ord('s') or key==ord('S'):
             for i,_ret,_img in imgs:
                 if _ret:
                     s_path = save_path.format(i,date_time,count)
                     cv2.imwrite(s_path,_img)
-                    cv2.imshow('view{0}'.format(i), np.ones(_img.shape,dtype=np.float32))
+                    cv2.destroyWindow('view{0}'.format(i))
+                    # cv2.imshow('view{0}'.format(i), np.ones(_img.shape,dtype=np.float32))
                     print('Saved: {0}'.format(s_path))
-            cv2.waitKey(5)
+            # cv2.waitKey(5)
         count += 1
     return
 
@@ -106,52 +107,89 @@ def record_videos(cap_list,save_dir,config):
     print('r    run video recording')
     print('s    stop video recording')
     print('**************************************')
-    return
+    import time
     ret,key = True,0
     save_path = os.path.join(save_dir, config['SAVE_FILE_NAME'])
-    count = 10000
-    while ret and key!=ord('q') and key!=ord('Q'):
-        imgs = []
+    wcap_list = list()
+    state = 'WAITING'
+    p_fps = pb.FPS()
+    while key!=ord('q') and key!=ord('Q'):
+        # read
+        fps = p_fps.get()
+        imgs = list()
         ret = False
-        for i, cap in cap_list:
+        for i, cap in enumerate(cap_list):
             _ret,_img = cap.read()
             ret = ret or _ret
             if _ret:
                 imgs.append((i,_ret, _img))
-                cv2.imshow('view{0}'.format(i),_img)
             else:
                 cv2.destroyWindow('view{0}'.format(i))
-        key = cv2.waitKey(1)
-        if key==ord('s') or key==ord('S'):
-            for i,_ret,_img in imgs:
+
+        # show while waiting
+        if state == 'WAITING':
+            for i, _ret,_img in imgs:
                 if _ret:
-                    s_path = save_path.format(i,count)
-                    cv2.imwrite(s_path,_img)
-                    print('Saved: {0}'.format(s_path))
-        count += 1
+                    cv2.imshow('view{0}'.format(i),_img)
+            key = cv2.waitKey(1)
+
+        #create video
+        if key==ord('r') or key==ord('R'):
+            if state=='WAITING':
+                date_time = get_date_time_string()
+                date_time = date_time[0]+'_'+date_time[1]
+                for wcap in wcap_list:
+                    if wcap is not None:
+                        wcap.release()
+                wcap_list.clear()
+                for i,_ret,_img in imgs:
+                    if _ret:
+                        v_name = config['PRIVATE_WRITER_SET'][i]['filename'].format(i,date_time)
+                        v_path = os.path.join(save_dir,v_name)
+                        v_fourcc = config['PRIVATE_WRITER_SET'][i]['fourcc']
+                        v_fps = int(fps)-1 if config['PRIVATE_WRITER_SET'][i].get('fps') is None else config['PRIVATE_WRITER_SET'][i]['fps']
+                        v_wh = (_img.shape[1],_img.shape[0])
+                        wcap = cv2.VideoWriter(v_path,v_fourcc,v_fps,v_wh)
+                        if wcap.isOpened():
+                            print('Created: {0}'.format(v_path))
+                            wcap_list.append(wcap)
+                            state = 'RUNNING'
+                        else:
+                            print('create error')
+                            wcap_list.append(None)
+            else:
+                print("ERROR: please stop recording first.")
+
+        # stop recording
+        if key==ord('s') or key==ord('S'):
+            if state == 'RUNNING':
+                state = 'WAITING'
+                print('Record video finish')
+            else:
+                print("ERROR: please run recording first.")
+        
+        # show while running
+        if state=='RUNNING':
+            for i,_ret,_img in imgs:
+                wcap = wcap_list[i]
+                if wcap is not None and _ret:
+                    wcap.write(_img)
+                    cv2.circle(_img,(int(_img.shape[1]/2),30),10,(0,0,255),20)
+                    cv2.imshow('view{0}'.format(i),_img)
+            key = cv2.waitKey(1) 
     return
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--save', type = str,  help = 'Where to save. \"$pwd$\"')
-    parser.add_argument('-i','--image',nargs='?',default='NOT_MENTIONED',help='To save images? \"OFF\"')
-    parser.add_argument('-v','--video',nargs='?',default='NOT_MENTIONED',help='To save videos? \"OFF\"')
+    parser.add_argument('-v','--video',nargs='?',default='NOT_MENTIONED',help='To save videos? To save images if not set. \"OFF\"')
     parser.add_argument('-t','--thread',nargs='?',default='NOT_MENTIONED',help='open camera in thread? \"OFF\"')
     parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Accept all the configuration? \"OFF\"')
     args = parser.parse_args()
 
-    # mode
-    if args.image == 'NOT_MENTIONED' and args.video == 'NOT_MENTIONED':
-        parser.print_help()
-        print('')
-        sys.exit('Choose one mode to record: --image or --video')
-    elif args.video != 'NOT_MENTIONED':
-        sys.exit('--video mode can not be use now')
-
-
     # save dir
     date_str,time_str = get_date_time_string()
-    if args.image != 'NOT_MENTIONED':
+    if args.video == 'NOT_MENTIONED':
         date_time = date_str+'_'+time_str
         save_dir = date_time if args.save is None else os.path.join(args.save, date_time)
     else:
@@ -173,6 +211,7 @@ if __name__=='__main__':
     config = decode_config(RECORD_CONFIG)
     #for k in config.keys():
     #    print('{0}: {1}'.format(k,config[k]))
+    #sys.exit()
 
     # cap
     if args.thread == 'NOT_MENTIONED':
@@ -180,12 +219,10 @@ if __name__=='__main__':
     else:
         cap_list = [pb.video.VideoCaptureThreadRelink(x) for x in config['OPEN']]
     
-    if args.image != 'NOT_MENTIONED':
+    if args.video == 'NOT_MENTIONED':
         record_images(cap_list,save_dir,config)
     else:
-        pass
-        #TODO
-        #record_videos(cap_list,save_dir,config)
+        record_videos(cap_list,save_dir,config)
 
 
 

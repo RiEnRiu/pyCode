@@ -4,6 +4,7 @@ import os
 import threading
 import time
 import queue
+import datetime
 
 
 
@@ -230,6 +231,47 @@ def makedirs(path):
         os.makedirs(path)
     return
 
+def get_time_stamp(start='year',end='second'):
+    datatime_str = str(datetime.datetime.now())
+    #  0123456789
+    #            0123456789      
+    #                      012345
+    # '2019-04-19 10:57:37.826145'
+    dd = '{0}_{1}-{2}-{3}-{4}'.format(\
+                    datatime_str[:10],\
+                    datatime_str[11:13],\
+                    datatime_str[14:16],\
+                    datatime_str[17:19],\
+                    datatime_str[20:])
+    i0 = 0
+    i1 = 26
+    if start=='year': i0 = 0
+    elif start=='month': i0 = 5
+    elif start=='day': i0 = 8
+    elif start=='hour': i0 = 11
+    elif start=='minute': i0 = 14
+    elif start=='second': i0 = 17
+    elif start=='microsecond': i0 = 20
+    else:
+        raise ValueError('start = {0} is invalid.'.format(start))
+   
+    if end=='year': i1 = 4
+    elif end=='month': i1 = 7
+    elif end=='day': i1 = 10
+    elif end=='hour': i1 = 13
+    elif end=='minute': i1 = 16
+    elif end=='second': i1 = 19
+    elif end=='microsecond': i1 = 26
+    else:
+        raise ValueError('end = {0} is invalid.'.format(end))
+
+    if i0>=i1:
+        raise ValueError('start = {0}, end = {1} is invalid.'.format(start,end))
+
+    return dd[i0:i1]
+
+    
+ 
 
 class productionLineWorker:
     def __init__(self, func, maxsize=0, flow_type = 'FIFO', refresh_HZ = 1000):
@@ -382,6 +424,12 @@ if __name__=='__main__':
     import pyBoost as pb
     #import pyBoostBase as pb
 
+    def test_get_time_stemp():
+        for i in range(100):
+            print(get_time_stamp('year','microsecond'))
+            time.sleep(0.1)
+        return
+
     def test_scan():
         path_to_scanner = r'G:\obj_mask_10'
         scanner_file = pb.scan_file(path_to_scanner)
@@ -478,7 +526,8 @@ if __name__=='__main__':
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    test_scan()
+    test_get_time_stemp()
+    # test_scan()
     #test_FPS()
     #test_productionLine()
 

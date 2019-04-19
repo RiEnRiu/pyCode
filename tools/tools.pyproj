@@ -28,6 +28,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="checkVocDataSet.py" />
+    <Compile Include="decodeVideo.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="previewAugmentor.py">
       <SubType>Code</SubType>
     </Compile>
@@ -35,9 +38,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="resizeImg.py" />
-    <Compile Include="resizeVoc.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="splitVoc.py">
       <SubType>Code</SubType>
     </Compile>

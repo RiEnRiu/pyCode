@@ -55,7 +55,6 @@ class KalmanBoxTracker:
         self._pre_z = self._convert_bbox_to_z(bbox)
         self.kf.x[:4] = self._pre_z
 
-        self.time_since_update = 0
         if id is None:
             KalmanBoxTracker.id_lock.acquire()
             self.id = KalmanBoxTracker.count
@@ -65,7 +64,6 @@ class KalmanBoxTracker:
             KalmanBoxTracker.id_lock.release()
         else:
             self.id = id
-        self.age = 0
         self.predict_time_since_update = 0
         self.update_time_since_predict = 0
 
@@ -97,10 +95,9 @@ class KalmanBoxTracker:
         Updates the state vector with observed bbox.
         """
         self.predict_time_since_update = 0
-        self.update_time_since_predict += 1        
-        self.pre_z = self._convert_bbox_to_z(bbox)
-        self.kf.update(self.pre_z)
-        self.age += 1
+        self.update_time_since_predict += 1    
+        self._pre_z = self._convert_bbox_to_z(bbox)
+        self.kf.update(self._pre_z)
         return
     
     def predict(self):
@@ -118,11 +115,11 @@ class KalmanBoxTracker:
         self.kf.update(self._pre_z)
         return 
 
-    def get_state(self):
-        """
-        Returns the current bounding box estimate.
-        """
-        return self._convert_x_to_bbox(self.kf.x)
+    #def get_predict(self):
+    #    """
+    #    Returns the current bounding box estimate.
+    #    """
+    #    return self._convert_x_to_bbox(self.kf.x)
 
 
 def _associate_detections_to_predictions(detections,predictions,iou_threshold):
@@ -147,45 +144,95 @@ def _associate_detections_to_predictions(detections,predictions,iou_threshold):
             matches.append(True)
     return matched_pairs[matches].reshape(-1,2)
 
-# max_objs
 class Sort():
-    def __init__(self,max_loss_times=5,min_age=3,iou_thresh=0.3,max_objs=0):
+    def __init__(self,max_loss_times=3,iou_thresh=-0.15,max_num_trks=0):
         """
         Sets key parameters for SORT
         """
         self._max_loss_times = max_loss_times
-        self._min_age = min_age
         self._iou_thresh = iou_thresh
-        self._max_objs = max_objs
-        self._trackers = [KalmanBoxTracker()]*0
+        self._max_num_trks = max_num_trks
+        #self._trackers = [KalmanBoxTracker()]*0
+        self._trackers = list()
 
     def update(self,dets):
         """
         Params:
           dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
         Requires: this method must be called once for each frame even with empty detections.
-        Returns (dets with id in last column, trk prediction with id in last column)， id = -1 means unmatched
+        Returns (ids that dets belone to which tracker , trk predictions_dict
         """
         #get predicted locations from existing _trackers.
         preds = []
         for t in range(len(self._trackers)-1,-1,-1):
-            one_trk = self._trackers[t]
-            pos = one_trk.predict()[0]
-            if(np.any(np.isnan(pos))):
+            trk = self._trackers[t]
+            pos = trk.predict()[0]
+            if np.any(np.isnan(pos)):
                 self._trackers.pop(t)
             else:
-                preds.append(np.array([pos[0], pos[1], pos[2], pos[3], one_trk.id]))
-        # TODO
-        #if len(dets)==0:
-        #    out_dets = np.empty((0,5),dtyep=np.int)
-        #else:
-            
-        
+                preds.append([pos[0], pos[1], pos[2], pos[3]])
+
+        # match
+        if len(dets)==0:
+            dets_to_match = np.empty((0,4),dtyep=np.int)
+        else:
+            dets_to_match = np.array(dets)
+        if len(preds)==0:
+            preds_to_match = np.empty((0,4),dtyep=np.int)
+        else:
+            preds_to_match = np.array(preds,np.int)
+        matched_pairs = _associate_detections_to_predictions(dets_to_match,preds_to_match,self._iou_thresh)
+
+        # update matched tracker
+        for i_d, i_p in matched_pairs:
+            self._trackers[i_p].update(dets[i_d])
+
+        # get id for out_dets
+        dets_id = [-1]*len(dets)
+        for i_d, i_p in matched_pairs:
+            dets_id[i_d] = self._trackers[i_p].id
+
+        # delete tracker over loss times
+        for t in range(len(self._trackers)-1,-1,-1):
+            trk = self._trackers[t]
+            if trk.predict_time_since_update>self._max_loss_times:
+                self._trackers.pop(t)
+                preds.pop(t)
+
+        # create and initialise new trackers for unmatched detections
+        unmatched_i_d = np.where(dets_id == -1)[0]
+        if self._max_num_trks<=0:
+            for i in unmatched_i_d:
+                trk = KalmanBoxTracker(dets_to_match[i,:])
+                self._trackers.append(trk)
+                dets_id[i] = trk.id
+        elif self._max_num_trks>0:
+            i = 0
+            len_unmatched_i_d = 0
+            delta = self._max_num_trks - len(self._trackers)
+            while i<len_unmatched_i_d and delta>0:
+                trk = KalmanBoxTracker(dets_to_match[i,:])
+                self._trackers.append(trk)
+                dets_id[i] = trk.id 
+                i += 1
+                delta -= 1    
+
+        # out preds 
+        out_preds = {self._trackers[i].id:pred for i, pred in enumerate(preds)}
+
+        return dets_id,out_preds
+                
+    def stay_unmatched(self):
+        for trk in self._trackers:
+            if trk.predict_time_since_update>0:
+                trk.stay()
+        return 
+
 
 
 class _VideoCaptureBase():
     def __init__(self, filename=None):
-        if(filename is None):
+        if filename is None:
             self._cvCap = cv2.VideoCapture()
         else:
             self._cvCap = cv2.VideoCapture(filename)
@@ -431,7 +478,7 @@ _colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png')
 #        fx = flow_unknown_0[:,:,0]
 #        fy = flow_unknown_0[:,:,1]
 
-#        if(maxmotion==0):
+#        if maxmotion==0:
 #            #print(type(fx))
 #            #sq_value = 
 #            #sq_value[sq_value<0.001] = 0.001
@@ -443,7 +490,7 @@ _colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png')
 #            maxrad = maxmotion
 #            rad = np.sqrt(fx*fx+fy*fy)/maxrad
 
-#        if(maxrad==0):#all are 0
+#        if maxrad==0:#all are 0
 #            maxrad = 1.0
 #            rad = np.zeros([fx.shape[0],fx.shape[1]])
 
@@ -514,7 +561,7 @@ def opticalFlowToColorMap(flow, maxmotion=0):
     fx = flow_unknown_0[:,:,0]
     fy = flow_unknown_0[:,:,1]
 
-    if(maxmotion==0):
+    if maxmotion==0:
         #print(type(fx))
         #sq_value = 
         #sq_value[sq_value<0.001] = 0.001
@@ -526,7 +573,7 @@ def opticalFlowToColorMap(flow, maxmotion=0):
         maxrad = maxmotion
         rad = np.sqrt(fx*fx+fy*fy)/maxrad
 
-    if(maxrad==0):#all are 0
+    if maxrad==0:#all are 0
         maxrad = 1.0
         rad = np.zeros([fx.shape[0],fx.shape[1]])
 
@@ -609,7 +656,7 @@ if __name__=='__main__':
         while key!=27 :
             print(fps.get())
             ret ,img = cap.read()
-            if(ret):
+            if ret:
                 cv2.imshow('img',img)
             key= cv2.waitKey(1)
         cap.release()
@@ -622,7 +669,7 @@ if __name__=='__main__':
         while key!=27 :
             print(fps.get())
             ret ,img = cap.read()
-            if(ret):
+            if ret:
                 cv2.imshow('img',img)
             key= cv2.waitKey(1)
         cap.release()
@@ -635,7 +682,7 @@ if __name__=='__main__':
         while(key!=27):
             print(fps.get())
             ret ,img = cap.read()
-            if(ret):
+            if ret:
                 cv2.imshow('img',img)
             key= cv2.waitKey(1)
         cap.release()
@@ -647,13 +694,13 @@ if __name__=='__main__':
         key=0
         ret = False
         begin_num = 900
-        while((ret == False) or (begin_num>0)):
+        while ret == False or begin_num>0:
             begin_num -=1
             ret ,preimg = cap.read()
             prevgray = cv2.cvtColor(preimg,cv2.COLOR_BGR2GRAY)
-        while(key!=27):
+        while key!=27:
             ret ,img = cap.read()
-            if(ret):
+            if ret:
                 #cal flow
                 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
                 flow = cv2.calcOpticalFlowFarneback(prevgray, gray,None, 0.5, 3, 15, 3, 5, 1.2, 0);

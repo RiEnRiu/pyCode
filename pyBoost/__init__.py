@@ -8,5 +8,4 @@ from pyBoost_base import *
 import img
 import voc
 import video
-# import sort
 sys.path.remove(__pyBoost_path)

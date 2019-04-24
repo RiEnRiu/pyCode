@@ -81,14 +81,14 @@ def resize_voc(args):
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', type = str,required=True, help = 'Where is the images?')
+    parser.add_argument('--dir', type = str,required=True, help = 'Where is the images or voc data set?')
     parser.add_argument('--wh', type = str,required=True, help = '[width,height] such as \'[720,480]\' for resized images')
     parser.add_argument('--rtype', type = int, default = 1, help = '[0 = stretch.] [1 = round up.] [2 = round up and crop] [3 = round down] [4 = round down and fill black] [5 = round down and fill self], \"1\"')
     parser.add_argument('--inter', default = 1,  type = int, help = '[0 = INTER_NEAREST] [1 = INTER_LINEAR] [2 = INTER_CUBIC] [3 = INTER_AREA] [4 = INTER_LANCZOS4], \"1\"')
     parser.add_argument('--save', type = str,  help = 'Where to save. \"$dir$\"')
     parser.add_argument('-v','--voc',nargs='?',default='NOT_MENTIONED',help='Is it voc date set in $dir$? \"OFF\"')
     parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Sure to cover the source file? \"OFF\"')
-    parser.add_argument('-r','--recursion',nargs='?',default='NOT_MENTIONED',help='Scan file with recursion. \"OFF\"')
+    parser.add_argument('-r','--recursion',nargs='?',default='NOT_MENTIONED',help='Scan file with recursion, invalid to voc data set. \"OFF\"')
 
     args = parser.parse_args()
 

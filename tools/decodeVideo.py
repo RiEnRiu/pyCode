@@ -104,8 +104,8 @@ if __name__=='__main__':
     for param in multi_param:
         param.append(one_param)
 
-    #process
-    num_process = min(args.process, multiprocessing.cpu_count())
+    # multiprocessing
+    num_process = min(args.process, int(multiprocessing.cpu_count())-1)
     num_process = min(len(multi_param),num_process)
     if num_process<=1:
         decode_one_video(param_pack[0])

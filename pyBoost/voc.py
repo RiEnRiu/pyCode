@@ -196,6 +196,13 @@ def adjust_bndbox(xml_info):
             xml_info.objs.pop(i)
     return no_change
 
+VOCRESIZE_STRETCH = pbimg.IMRESIZE_STRETCH
+VOCRESIZE_ROUNDUP = pbimg.IMRESIZE_ROUNDUP
+VOCRESIZE_ROUNDUP_CROP = pbimg.IMRESIZE_ROUNDUP_CROP
+VOCRESIZE_ROUNDDOWN = pbimg.IMRESIZE_ROUNDDOWN
+VOCRESIZE_ROUNDDOWN_FILL_BLACK = pbimg.IMRESIZE_ROUNDDOWN_FILL_BLACK
+VOCRESIZE_ROUNDDOWN_FILL_SELF = pbimg.IMRESIZE_ROUNDDOWN_FILL_SELF
+
 class vocResizer(pbimg.imResizer):
     def __init__(self, resize_type, dsize, interpolation):
         pbimg.imResizer.__init__(self, resize_type, dsize, interpolation)
@@ -513,6 +520,55 @@ class vocEvaluator:
         self.__annoRecs = []
         return
 
+#cv2.seamlessClone(src,dst,mask,p,flags,blend)
+#TODO:blend
+BLEND_SPARSE = 0
+BLEND_DENSE = 1
+BLEND_ABREAST = 2
+BLEND_OPT_ROTATE = 3
+BLEND_OPT_FLIP = 4
+BLEND_OPT_FLIPUD = 5
+BLEND_OPT_FLIPLR = 6
+BLEND_OPT_AFFINE = 7
+BLEND_OPT_PERSPECTIVE = 8
+BLEND_OPT_HUE = 9
+BLEND_OPT_LIGHTNESS = 10
+BLEND_OPT_SATURATION = 11
+
+class blender():
+    def __init__(self):
+        self.type = BLEND_SPARSE
+        self.size = 512
+        self.obj_size = [32,64]
+        self.opts = \
+           {BLEND_OPT_ROTATE:0.1,\
+            BLEND_OPT_FLIP:0.1,\
+            BLEND_OPT_AFFINE:0.1,\
+            BLEND_OPT_PERSPECTIVE:0.1,\
+            BLEND_OPT_HUE:0.05,\
+            BLEND_OPT_LIGHTNESS:0.05,\
+            BLEND_OPT_SATURATION:0.05}
+        self.opt_range = \
+           {BLEND_OPT_ROTATE:(0,360),\
+            BLEND_OPT_AFFINE:(-0.05,0.05),\
+            BLEND_OPT_PERSPECTIVE:(0,0.05),\
+            BLEND_OPT_HUE:(-10,10),\
+            BLEND_OPT_LIGHTNESS:(-0.1,0.1),\
+            BLEND_OPT_SATURATION:(-0.1,0.1)}
+        self.cover = 0.1
+        self.harmonic = 0.5
+        pass
+
+    
+
+    def blend(bg,objs):
+        # random opt and change objs
+
+        # get obj size and find place
+
+        # do blend
+        image, xml = None, None
+        return image, xml
 
 
 class bndbox():

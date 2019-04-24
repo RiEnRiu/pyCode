@@ -29,6 +29,7 @@ import voc as pbvoc
 
 #from scipy.optimize import linear_sum_assignment
 from sklearn.utils.linear_assignment_ import linear_assignment
+from filterpy.kalman import KalmanFilter
 
 class KalmanBoxTracker:
     """

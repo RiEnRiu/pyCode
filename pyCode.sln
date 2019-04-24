@@ -13,13 +13,13 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tf_module", "tf_module\tf_m
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "interview", "interview\interview.pyproj", "{1527C12D-4B0B-4619-89CA-497D9BE52C13}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tracker", "tracker\tracker.pyproj", "{F4636CE2-BC67-4937-B28B-F2AFEC839834}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "pyBoost", "pyBoost\pyBoost.pyproj", "{90AF8C83-7309-46BC-A522-CD64A6340FC3}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tools", "tools\tools.pyproj", "{C6651947-E2A4-419F-8033-49C9E647C71A}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_tf", "learn_tf\learn_tf.pyproj", "{05D946ED-279B-405B-8D34-23C95442F527}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "test_module", "test_module\test_module.pyproj", "{D0147A38-877E-4216-A067-6289D117578D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,14 +37,14 @@ Global
 		{BE3819D1-11ED-41CC-AEF7-D8242473138D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F4636CE2-BC67-4937-B28B-F2AFEC839834}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F4636CE2-BC67-4937-B28B-F2AFEC839834}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6651947-E2A4-419F-8033-49C9E647C71A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6651947-E2A4-419F-8033-49C9E647C71A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05D946ED-279B-405B-8D34-23C95442F527}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{05D946ED-279B-405B-8D34-23C95442F527}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0147A38-877E-4216-A067-6289D117578D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0147A38-877E-4216-A067-6289D117578D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

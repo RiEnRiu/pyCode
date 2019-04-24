@@ -36,10 +36,6 @@
     <Compile Include="img.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="sort.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="sort_2.py" />
     <Compile Include="taskflow.py">
       <SubType>Code</SubType>
     </Compile>

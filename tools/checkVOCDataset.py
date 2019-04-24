@@ -70,15 +70,18 @@ def check_voc(voc_root_path,to_check_size):
 
 
     #print bad size images
+    bad_img_size_log = list()
     if len(bad_img_size_list)!=0:
         print('There are {0} images\' size not matched, such as:'.format(len(bad_img_size_list)))
         for img_shape, xml, xml_path in bad_img_size_list[:3]:
-            print('{0}  img={1} vs xml=({2}, {3}, {4}).'.format(\
+            one_log = '{0}  img={1} vs xml=({2}, {3}, {4}).'.format(\
                     os.path.basename(xml_path),\
                     img_shape,\
-                    xml.height, xml.width, xml.depth))
+                    xml.height, xml.width, xml.depth)
+            bad_img_size_log.append(one_log)
+            print(one_log)
         print('...')
-    return len(bad_img_size_list)!=0
+    return bad_img_size_log
 
 def countVoc(voc_root_path):
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
@@ -157,8 +160,11 @@ if __name__=='__main__':
         if str_in !='Y' and str_in !='y':
             sys.exit('user quit')
 
-    have_size_error = check_voc(args.dir, args.fast=='NOT_MENTIONED')
-    if have_size_error:
+    bad_img_size_log = check_voc(args.dir, args.fast=='NOT_MENTIONED')
+    if len(bad_img_size_log)!=0:
+        with open(os.path.join(args.dir,'size_error_list.txt'),'w') as fp:
+            for one_log in bad_img_size_log:
+                fp.write(one_log+'\n')
         print('deal with the size errors and check again.')
     else:
         countVoc(args.dir)

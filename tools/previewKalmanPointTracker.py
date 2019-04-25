@@ -23,7 +23,7 @@ def mousemove(event, x, y, s, p):
 
 if __name__=='__main__':
     # kalman
-    # 4£ºnumber of states£¬(x£¬y£¬dx£¬dy); 2£ºobserved value£¬(x,y)
+    # 4 number of states (x,y,dx,dy); 2 observed value (x,y)
     #   x(n)   1 0 1 0    x(n-1)    vx
     #   y(n) = 1 0 0 1 *  y(n-1) +  vy
     #  dx(n)   0 0 1 0   dx(n-1)   dvx

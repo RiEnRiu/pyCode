@@ -12,17 +12,9 @@ mkdir .\ubuntu\Common
 copy .\Common\*.py .\ubuntu\Common
 copy .\Common\colorRing.png .\ubuntu\Common
 
-::project handDetect
-mkdir .\ubuntu\handDetect
-copy .\handDetect\*.py .\ubuntu\handDetect
-
 ::project ImageTool
 mkdir .\ubuntu\ImageTool
 copy .\ImageTool\*.py .\ubuntu\ImageTool
-
-::project imTool
-mkdir .\ubuntu\imTool
-copy .\imTool\*.py .\ubuntu\imTool
 
 ::project interview
 mkdir .\ubuntu\interview
@@ -60,18 +52,6 @@ copy .\tf_module\*.py .\ubuntu\tf_module
 ::project tools
 mkdir .\ubuntu\tools
 copy .\tools\*.py .\ubuntu\tools
-
-::project tracker
-mkdir .\ubuntu\tracker
-copy .\tracker\*.py .\ubuntu\tracker
-
-::project tracker
-mkdir .\ubuntu\tracker
-copy .\tracker\*.py .\ubuntu\tracker
-
-::project vocTool
-mkdir .\ubuntu\vocTool
-copy .\vocTool\*.py .\ubuntu\vocTool
 
 ::copy to ubuntu
 xcopy /E/Y .\ubuntu X:\

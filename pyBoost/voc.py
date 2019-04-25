@@ -207,47 +207,59 @@ class vocResizer(pbimg.imResizer):
     def __init__(self, resize_type, dsize, interpolation):
         pbimg.imResizer.__init__(self, resize_type, dsize, interpolation)
 
-    def xmlResizeInDisk(self, xml_src, xml_dst, path_replace = None):
-        xml_src_info = xml_read(xml_src)
-        ret,xml_dist_info = self.xmlResize(xml_src_info)
-        if ret is not True:
-            print('There is no object after resized: '+xml_src)
-        xml_write(xml_dst,xml_dist_info)
+    def xmlResizeInDisk(self, xml_src_path, xml_dst_path, path_replace = None):
+        xml_src_info = xml_read(xml_src_path)
+        xml_dst_info = self.xmlResize(xml_src_info)
+        xml_write(xml_dst_path,xml_dst_info)
         return
 
     def xmlResize(self,xml_src_info,path_replace = None):
-        xml_dist_info = xml_src_info.copy()
+        xml_dst_info = xml_src_info.copy()
         if path_replace is not None:
-            xml_dist_info.path = path_replace
-            xml_dist_info.folder = os.path.split(os.path.split(path_replace)[0])[1]#[part_of_path]/[folder]/[image]
+            xml_dst_info.path = path_replace
+            xml_dst_info.folder = os.path.basename(os.path.dirname(path_replace))#[part_of_path]/[folder]/[image]
         # ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(xml_src_info.height, xml_src_info.width)
-        xml_dist_info.width, xml_dist_info.height = param[1]
-        for i,one_bndbox in enumerate(xml_dist_info.objs):
+        param = self._transParam(xml_src_info.width, xml_src_info.height)
+        xml_dst_info.width, xml_dst_info.height = param[1]
+        for i,one_bndbox in enumerate(xml_dst_info.objs):
             one_bndbox.xmin = int(one_bndbox.xmin*param[2][0]+param[2][1])
             one_bndbox.ymin = int(one_bndbox.ymin*param[3][0]+param[3][1])
             one_bndbox.xmax = int(one_bndbox.xmax*param[2][0]+param[2][1])
             one_bndbox.ymax = int(one_bndbox.ymax*param[3][0]+param[3][1])
         #must check bndboxes range
         #must be in [1,w-1] and [1,h-1]
-        flag = adjustBndbox(xml_dist_info)
-        return flag!=-1,xml_dist_info
+        adjust_bndbox(xml_dst_info)
+        if len(xml_dst_info.objs)==0:
+            msg = 'There is no object after resized: {0}'.format(xml_dst_info.filename)
+            print(msg)
+        return xml_dst_info
 
-    def xmlRecover(self,xml_dist_info, im_src_shape, path_replace = None):
-        vocxml_info = xml_dist_info.copy()
+    def xmlRecoverInDisk(self, xml_dst_path, xml_src_path, im_src_shape, path_replace = None):
+        xml_dst_info = xml_read(xml_dst_path)
+        xml_src_info = self.xmlRecover(xml_dst_info, im_src_shape, path_replace)
+        xml_write(xml_src_path, xml_src_info)
+        return
+
+    def xmlRecover(self,xml_dst_info, im_src_shape, path_replace = None):
+        xml_src_info = xml_dst_info.copy()
         if path_replace is not None:
-            vocxml_info.path = path_replace
-            vocxml_info.folder = os.path.split(os.path.split(path_replace)[0])[1]#[part_of_path]/[folder]/[image]
-        vocxml_info.width, vocxml_info.height = self.im_src_shape[1], self.im_src_shape[0]
-        for i,one_bndbox in enumerate(vocxml_info.objs):
+            xml_src_info.path = path_replace
+            xml_src_info.folder = os.path.basename(os.path.dirname(path_replace))#[part_of_path]/[folder]/[image]
+        xml_src_info.width, xml_src_info.height = im_src_shape[1], im_src_shape[0]
+        # ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
+        param = self._transParam(xml_src_info.width, xml_src_info.height)
+        for i,one_bndbox in enumerate(xml_src_info.objs):
             one_bndbox.xmin = int((one_bndbox.xmin-param[2][1])/param[2][0])
             one_bndbox.ymin = int((one_bndbox.ymin-param[3][1])/param[3][0])
             one_bndbox.xmax = int((one_bndbox.xmax-param[2][1])/param[2][0])
             one_bndbox.ymax = int((one_bndbox.ymax-param[3][1])/param[3][0])
         #must check bndboxes range
         #must be in [1,w-1] and [1,h-1]
-        flag = adjustBndbox(vocxml_info)
-        return flag!=-1,vocxml_info
+        adjust_bndbox(xml_src_info)
+        if len(xml_src_info.objs)==0:
+            msg = 'There is no object after resized: {0}'.format(xml_src_info.filename)
+            print(msg)
+        return xml_src_info
 
 #"dets_file" is pickle file with each dump [["xmlName" "label" "confidence" "x_min" "y_min" "x_max" "y_max"],...]
 class vocEvaluator:
@@ -745,7 +757,7 @@ def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
                                         for x in boxes_dict[key]])
             frontName = os.path.splitext(key)[0]
             xmlSavePath = os.path.join(savePath,frontName+'.xml')
-            adjustBndbox(p_vocXml)
+            adjust_bndbox(p_vocXml)
             xml_write(xmlSavePath,p_vocXml)
     else:
         for key in boxes_dict:
@@ -757,7 +769,7 @@ def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
                                 objs = [vocXmlobj(name=x[0],xmin=int(x[1]),ymin=int(x[2]),xmax=int(x[3]),ymax=int(x[4]))\
                                         for x in boxes_dict[key]])
             xmlSavePath = os.path.join(savePath,key+'.xml')
-            adjustBndbox(p_vocXml)
+            adjust_bndbox(p_vocXml)
             xml_write(xmlSavePath,p_vocXml)
 
 
@@ -771,12 +783,12 @@ if __name__=='__main__':
     sys.path.append('../')
     import pyBoost as pb
 
-    def test_adjustBndbox():
+    def test_adjust_bndbox():
         read_path = r'E:\fusion\frcnn_hand'
         xml_file_name = pb.scan_file_r(read_path,'.xml',False,True)
         for one in xml_file_name:
             xml_info = pb.voc.xml_read(os.path.join(read_path,one))
-            flag = pb.voc.adjustBndbox(xml_info)
+            flag = pb.voc.adjust_bndbox(xml_info)
             if flag!=0:
                 print('['+str(flag)+'], path = '+ one)
         return
@@ -797,7 +809,7 @@ if __name__=='__main__':
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    test_adjustBndbox()
+    test_adjust_bndbox()
     #test_vocEvaluator(save_folder_name)
     #test_detToXml(save_folder_name)
 

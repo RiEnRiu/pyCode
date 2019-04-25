@@ -46,35 +46,33 @@ def resize_voc(args):
         if(str_in !='Y' and str_in !='y'):
             sys.exit('user quit')
 
-    jpg_dir = os.path.join(args.dir,'JPGEImages')
+    jpg_dir = os.path.join(args.dir,'JPEGImages')
     xml_dir = os.path.join(args.dir,'Annotations')
 
-    jpg_relative, xml_relative, o1 ,o2 = pb.scan_pair(jpg_dir,xml_dir,'.jpg.jpeg','.xml',False,True)
+    relative_pairs, o1 ,o2 = pb.scan_pair(jpg_dir,xml_dir,'.jpg.jpeg','.xml',False,True)
 
     if(args.save is None):
-        read_jpg_list = [os.path.join(jpg_dir,x) for x in jpg_relative]
-        read_xml_list = [os.path.join(xml_dir,x) for x in xml_relative]
+        read_jpg_list = [os.path.join(jpg_dir,x[0]) for x in relative_pairs]
+        read_xml_list = [os.path.join(xml_dir,x[1]) for x in relative_pairs]
         save_jpg_list = read_jpg_list
         save_xml_list = read_xml_list
     else:
-        read_jpg_list = [os.path.join(jpg_dir,x) for x in jpg_relative]
-        read_xml_list = [os.path.join(xml_dir,x) for x in xml_relative]
-        save_jpg_dir = os.path.join(jpg_dir,'JPGEImages')
-        save_xml_dir = os.path.join(xml_dir,'Annotations')
+        read_jpg_list = [os.path.join(jpg_dir,x[0]) for x in relative_pairs]
+        read_xml_list = [os.path.join(xml_dir,x[1]) for x in relative_pairs]
+        save_jpg_dir = os.path.join(args.save,'JPEGImages')
+        save_xml_dir = os.path.join(args.save,'Annotations')
         pb.makedirs(save_jpg_dir)
         pb.makedirs(save_xml_dir)
-        save_jpg_list = [os.path.join(save_jpg_dir,x) for x in jpg_relative]
-        save_xml_list = [os.path.join(save_xml_dir,x) for x in xml_relative]
+        save_jpg_list = [os.path.join(save_jpg_dir,x[0]) for x in relative_pairs]
+        save_xml_list = [os.path.join(save_xml_dir,x[1]) for x in relative_pairs]
 
     voc_rszr = pb.voc.vocResizer(args.rtype,json.loads(args.wh),args.inter)
     for imgrp,xmlrp,imgsp,xmlsp in \
             tqdm.tqdm(zip(read_jpg_list,read_xml_list,save_jpg_list,save_xml_list)):
-        img = cv2.imread(imgrps,cv2.IMREAD_UNCHANGED)
-        xml = pb.voc.xml_read(xmlrp)
+        img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED)
         rimg = voc_rszr.imResize(img)
-        rxml = voc_rszr.xmlResize(img)
         cv2.imwrite(imgsp,rimg)
-        pb.voc.xml_write(xmlsp,rxml)
+        voc_rszr.xmlResizeInDisk(xmlrp,xmlsp)
     return 
 
 

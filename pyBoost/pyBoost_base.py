@@ -8,11 +8,11 @@ import datetime
 
 
 
-def scan_folder(dir):
-    if os.path.isdir(dir) == False:
-        raise ValueError('It is not valid path: '+dir)
+def scan_folder(scanned_dir):
+    if os.path.isdir(scanned_dir) == False:
+        raise ValueError('It is not valid path: '+scanned_dir)
         return []
-    return [x for x in os.listdir(dir) if os.path.isdir(os.path.join(dir,x))]
+    return [x for x in os.listdir(scanned_dir) if os.path.isdir(os.path.join(scanned_dir,x))]
 
 # this.splitext('123.txt') ->  ['123', '.txt'] ,    the same as os.path.splitext()
 # this.splitext('.txt') ->  ['', '.txt']       , different from os.path.splitext()
@@ -40,14 +40,14 @@ def __get_exts_set(exts):
     return exts_set
 
 # exts is not case sensitive 
-def scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
-    if os.path.isdir(dir) == False:
-        raise ValueError('It is not valid dir: '+dir)
+def scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
+    if os.path.isdir(scanned_dir) == False:
+        raise ValueError('It is not valid dir: '+scanned_dir)
         return []
     exts_set = __get_exts_set(exts)
 
-    contents = os.listdir(dir)
-    contents_full_path = [os.path.join(dir,x) for x in contents]
+    contents = os.listdir(scanned_dir)
+    contents_full_path = [os.path.join(scanned_dir,x) for x in contents]
     files_name, files_full_path = [], []
     for c,cf in zip(contents,contents_full_path):
         if  os.path.isfile(cf):
@@ -75,8 +75,8 @@ def scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
             sp_file = [splitext(x) for x in files_name]
             return [front for front,ext in sp_file if ext in exts_set]
 
-def __do_deep_scan_file(dir, output, with_root_dir, relative_path = ''):
-    this_root = os.path.join(dir,relative_path)
+def __do_deep_scan_file(scanned_dir, output, with_root_dir, relative_path = ''):
+    this_root = os.path.join(scanned_dir,relative_path)
     contents = os.listdir(this_root)
     contents_full_path = [os.path.join(this_root,x) for x in contents]
     files_name = []
@@ -97,18 +97,18 @@ def __do_deep_scan_file(dir, output, with_root_dir, relative_path = ''):
         output.extend([os.path.join(relative_path, x) for x in files_name])
 
     for folder in folders_full_path:
-        __do_deep_scan_file(dir,output,with_root_dir,os.path.join(relative_path,folder))
+        __do_deep_scan_file(scanned_dir,output,with_root_dir,os.path.join(relative_path,folder))
 
     return
 
-def deep_scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
-    if os.path.isdir(dir) == False:
-        raise ValueError('It is not valid path: '+dir)
+def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
+    if os.path.isdir(scanned_dir) == False:
+        raise ValueError('It is not valid path: '+scanned_dir)
         return []
     exts_set = __get_exts_set(exts)    
 
     files_path = []
-    __do_deep_scan_file(dir,files_path, with_root_dir)
+    __do_deep_scan_file(scanned_dir,files_path, with_root_dir)
    
     if exts_set is None:
         return 
@@ -123,7 +123,7 @@ def deep_scan_file(dir,exts=None,with_root_dir=True,with_ext=True):
         else:
             return [front for front,ext in sp_file if ext in exts_set]
 
-def scan_pair(dir1,dir2,exts1,exts2,with_root_dir=True,with_ext=True):
+def scan_pair(scanned_dir1,scanned_dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     if exts1 is None or exts2 is None:
         raise ValueError('\"ext1\" and \"ext2\" in funsion \"scan_pair()\" must be set.')
         return [],[],[]
@@ -131,7 +131,7 @@ def scan_pair(dir1,dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     exts_set1 = __get_exts_set(exts1)
     exts_set2 = __get_exts_set(exts2)
 
-    file1 = scan_file(dir1,None,False,True)
+    file1 = scan_file(scanned_dir1,None,False,True)
     sp1 = [splitext(x) for x in file1]
     others1 = []
     for i in range(len(file1)-1,-1,-1):
@@ -140,7 +140,7 @@ def scan_pair(dir1,dir2,exts1,exts2,with_root_dir=True,with_ext=True):
             file1.pop(i)
             sp1.pop(i)
 
-    file2 = scan_file(dir2,None,False,True)
+    file2 = scan_file(scanned_dir2,None,False,True)
     sp2 = [splitext(x) for x in file2]
     others2 = []
     for i in range(len(file2)-1,-1,-1):
@@ -164,18 +164,18 @@ def scan_pair(dir1,dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     others2.extend([f2 for i2,f2 in enumerate(file2) if i2 not in paired_index2_set])
     
     if with_root_dir==True and with_ext==True:
-        return [[os.path.join(dir1,file1[i1]),os.path.join(dir2,file2[i2])] for i1,i2 in paired_index],\
-               [os.path.join(dir1,o1) for o1 in others1],\
-               [os.path.join(dir2,o2) for o2 in others2]
+        return [[os.path.join(scanned_dir1,file1[i1]),os.path.join(scanned_dir2,file2[i2])] for i1,i2 in paired_index],\
+               [os.path.join(scanned_dir1,o1) for o1 in others1],\
+               [os.path.join(scanned_dir2,o2) for o2 in others2]
     elif with_root_dir==False and with_ext==True:
         return [[file1[i1],file2[i2]] for i1,i2 in paired_index],\
                others1,\
                others2
     elif with_root_dir==True and with_ext==False:
-        return [[os.path.join(dir1,splitext(file1[i1])[0]), os.path.join(dir2,splitext(file2[i2])[0])] \
+        return [[os.path.join(scanned_dir1,splitext(file1[i1])[0]), os.path.join(scanned_dir2,splitext(file2[i2])[0])] \
                    for i1,i2 in paired_key],\
-               [os.path.join(dir1,o1) for o1 in others1],\
-               [os.path.join(dir2,o2) for o2 in others2]
+               [os.path.join(scanned_dir1,o1) for o1 in others1],\
+               [os.path.join(scanned_dir2,o2) for o2 in others2]
     else:# elif with_root==False and with_ext==False:
         return [[splitext(file1[i1])[0],splitext(file2[i2])[0]] for i1,i2 in paired_key],\
                others1,\

@@ -143,6 +143,10 @@ def cutVoc(voc_root_path,rate=None):
                 print('Fail to save {0} to {1}'.format(os.path.basename(img_path), obj_save_full_path))
             objs_index += 1
 
+def repair_voc():
+    pass
+   
+
 
 if __name__=='__main__':
 

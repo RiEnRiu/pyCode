@@ -31,13 +31,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="p014_PCA.py" />
-    <Compile Include="p016_BPNetworForMNIST_customized_grad.py" />
-    <Compile Include="p018_BPNetworForMNIST.py" />
+    <Compile Include="p016_BPNetworkForMNIST_customized_grad.py" />
+    <Compile Include="p018_BPNetworkForMNIST.py" />
     <Compile Include="p020_linearRegression.py" />
     <Compile Include="p023_HessianMatrix.py" />
     <Compile Include="p025_determinant.py" />
     <Compile Include="p026_adam_optimizer.py" />
     <Compile Include="p031_cost_function.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="p035_BPNetworkForIRIS.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

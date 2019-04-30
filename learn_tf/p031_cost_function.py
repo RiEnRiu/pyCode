@@ -73,7 +73,6 @@ d] dH(x,z)
 # dim: which dimension does softmax do?
 tf.nn.softmax_cross_entropy_with_logits_v2(_sentinel=None, labels=None,logits=None,dim=-1,name=None)
 
-
 # _sentinel: placehold parameter, do not set it
 # labels: z = labels, labels.shape == logits.shape， labels.dtype==tf.float32 or labels.dtype==tf.float64 
 # logits: x = logits, logits.shape == labels.shape， logits.dtype==tf.int32 or logits.dtype==tf.int64 

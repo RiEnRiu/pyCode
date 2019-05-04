@@ -94,7 +94,7 @@ if ret == True:
 #cv2.putText(img1,'0',(int(pts1[0][0]),int(pts1[0][1])),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,255),3)
 
 
-#1.0.2.6.0 вСср
+#1.0.2.6.0 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[i+18]
@@ -106,7 +106,7 @@ if ret == True:
 #    pts1_list[i] = pts1[i-18]
 #pts1 = np.array(pts1_list,np.int32)
 
-#1.0.2.4.3 иооб
+#1.0.2.4.3 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[5-i]
@@ -119,7 +119,7 @@ if ret == True:
 #pts1 = np.array(pts1_list,np.int32)
 
 
-#1.0.2.3.3 иооб
+#1.0.2.3.3 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[5-i]
@@ -132,7 +132,7 @@ if ret == True:
 #pts1 = np.array(pts1_list,np.int32)
 
 
-#1.0.0.2.0 иооб
+#1.0.0.2.0 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[5-i]
@@ -144,20 +144,7 @@ if ret == True:
 #    pts1_list[i] = pts1[41-i]
 #pts1 = np.array(pts1_list,np.int32)
 
-#1.0.0.5.0 иооб
-#pts1_list = [None]*24
-#for i in range(0,6):
-#    pts1_list[i] = pts1[5-i]
-#for i in range(6,12):
-#    pts1_list[i] = pts1[18-i]
-#for i in range(12,18):
-#    pts1_list[i] = pts1[29-i]
-#for i in range(18,24):
-#    pts1_list[i] = pts1[41-i]
-#pts1 = np.array(pts1_list,np.int32)
-
-
-#1.0.3.7.5 иооб
+#1.0.0.5.0 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[5-i]
@@ -170,7 +157,20 @@ if ret == True:
 #pts1 = np.array(pts1_list,np.int32)
 
 
-#1.0.3.5.4 иооб
+#1.0.3.7.5 О©╫О©╫О©╫О©╫
+#pts1_list = [None]*24
+#for i in range(0,6):
+#    pts1_list[i] = pts1[5-i]
+#for i in range(6,12):
+#    pts1_list[i] = pts1[18-i]
+#for i in range(12,18):
+#    pts1_list[i] = pts1[29-i]
+#for i in range(18,24):
+#    pts1_list[i] = pts1[41-i]
+#pts1 = np.array(pts1_list,np.int32)
+
+
+#1.0.3.5.4 О©╫О©╫О©╫О©╫
 #pts1_list = [None]*24
 #for i in range(0,6):
 #    pts1_list[i] = pts1[5-i]

@@ -30,8 +30,9 @@ def resize_img_only(args):
         pb.makedirs(args.save)
         read_img_list = [os.path.join(args.dir,x) for x in file_relative]
         save_img_list = [os.path.join(args.save,x) for x in file_relative]
-
-    im_rszr = pb.img.imResizer(args.rtype,json.loads(args.wh),args.inter)
+    
+    wh = tuple(json.loads(args.wh))
+    im_rszr = pb.img.imResizer(args.rtype,wh,args.inter)
     for read_path,save_path in tqdm.tqdm(zip(read_img_list,save_img_list)):
         img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
         rimg = im_rszr.imResize(img)
@@ -66,7 +67,8 @@ def resize_voc(args):
         save_jpg_list = [os.path.join(save_jpg_dir,x[0]) for x in relative_pairs]
         save_xml_list = [os.path.join(save_xml_dir,x[1]) for x in relative_pairs]
 
-    voc_rszr = pb.voc.vocResizer(args.rtype,json.loads(args.wh),args.inter)
+    wh = tuple(json.loads(args.wh))
+    voc_rszr = pb.voc.vocResizer(args.rtype,wh,args.inter)
     for imgrp,xmlrp,imgsp,xmlsp in \
             tqdm.tqdm(zip(read_jpg_list,read_xml_list,save_jpg_list,save_xml_list)):
         img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED)
@@ -91,10 +93,12 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if args.voc=='NOT_MENTIONED':
-        print('Resizing an images set...')
+        print('Resizing an images set in: {0}'.format(args.dir))
+        print('Save in: {0}'.format(args.dir if args.save is None else args.save))
         resize_img_only(args)
     else:
-        print('Resizing an VOC data set...')
+        print('Resizing an VOC data set in: {0}'.format(args.dir))
+        print('Save in: {0}'.format(args.dir if args.save is None else args.save))
         resize_voc(args)
 
 

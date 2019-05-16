@@ -8,14 +8,8 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.model_selection import train_test_split
 
-
-
-
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
-
-
-import matplotlib.pyplot as plt
 
 
 def draw_plot(x,y, title, label):
@@ -98,34 +92,38 @@ def run(h_size, stddev, sgd_steps):
         start_time = time.time()
         updates_sgd = tf.train.GradientDescentOptimizer(sgd_step).minimize(cost)
         sess = tf.Session(config=GPU_CONFIG)
+        # init
         init = tf.initialize_all_variables()
         steps = 50
         sess.run(init)
-        x = np.arange(steps)
+
         test_acc = []
         train_acc = []
         print('Step, train accuracy, test accuracy')
-
         for step in range(steps):
             # Train with each example
             for i in range(len(train_x)):
                 sess.run(updates_sgd, feed_dict={X:train_x[i:i+1],y:train_y[i:i+1]})
-                train_accuracy = np.mean(np.argmax(train_y,axis=1) == sess.run(predict,feed_dict={X:train_x,y:test_y}))
-                test_accuracy = np.mean(np.argmax(test_y, axis=1) == sess.run(predict, feed_dict={X: test_x, y: test_y}))
-                print('{0:d}, {1:.2f}, {2:.2f}'.format(step+1,100*train_accuracy, 100*test_accuracy))
-                #x.append(step)
-                test_acc.append(100 * test_accuracy)
-                train_acc.append(100 * train_accuracy)
+            # accuracy for each step
+            train_accuracy = np.mean(np.argmax(train_y,axis=1) == sess.run(predict,feed_dict={X:train_x,y:test_y}))
+            test_accuracy = np.mean(np.argmax(test_y, axis=1) == sess.run(predict, feed_dict={X: test_x, y: test_y}))
+            print('{0:d}, {1:.2f}, {2:.2f}'.format(step+1,100*train_accuracy, 100*test_accuracy))
+            test_acc.append(100 * test_accuracy)
+            train_acc.append(100 * train_accuracy)
         end_time = time.time()
         diff = end_time -start_time
         time_taken_summary.append((sgd_step,diff))
-        t = [np.array(test_acc)]
-        t.append(train_acc)
+        #t = [np.array(test_acc)]
+        #t.append(train_acc)
         train_accs.append(train_acc)
+
+    # draw
     title = "Steps vs Training Accuracy-" + " sgd steps: 0.01,0.02, 0.03"
     label = ['SGD Step 0.01', 'SGD Step 0.02','SGD Step 0.03']
-    draw_plot(x, train_accs, title, label)
     print("Time Taken Summary :" + str(time_taken_summary))
+    x = np.arange(steps)
+    draw_plot(x, train_accs, title, label)
+
     sess.close()             
 
 if __name__=='__main__':

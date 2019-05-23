@@ -34,8 +34,8 @@ import pickle
 import cv2
 
 class vocXmlobj:
-    def __init__(self,name = 'Unknow',pose = 'Unspecified',truncated = 0,\
-                difficult = 0,xmin = 0,ymin = 0, xmax = 0,ymax = 0):
+    def __init__(self,name,xmin,ymin,xmax,ymax,\
+                pose = 'Unspecified',truncated = 0,difficult = 0):
         self.name = name
         self.pose = pose
         self.truncated = truncated
@@ -45,15 +45,15 @@ class vocXmlobj:
         self.xmax = xmax
         self.ymax = ymax
 
-    def copyTo(self,inputOutput):
-        inputOutput.name = self.name
-        inputOutput.pose = self.pose 
-        inputOutput.truncated = self.truncated 
-        inputOutput.difficult = self.difficult 
-        inputOutput.xmin = self.xmin 
-        inputOutput.ymin = self.ymin 
-        inputOutput.xmax = self.xmax 
-        inputOutput.ymax = self.ymax
+    #def copyTo(self,inputOutput):
+    #    inputOutput.name = self.name
+    #    inputOutput.pose = self.pose 
+    #    inputOutput.truncated = self.truncated 
+    #    inputOutput.difficult = self.difficult 
+    #    inputOutput.xmin = self.xmin 
+    #    inputOutput.ymin = self.ymin 
+    #    inputOutput.xmax = self.xmax 
+    #    inputOutput.ymax = self.ymax
 
     def copy(self):
         out = vocXmlobj(self.name,self.pose,self.truncated,self.difficult,\
@@ -62,8 +62,9 @@ class vocXmlobj:
 
 
 class vocXml:
-    def __init__(self,folder='JPEGImages',filename='Unknown',path = './JEPGImages',database = 'Unknown',\
-                width = 0,height = 0,depth = 3,segmented = 0,objs = None):
+    def __init__(self,width,height,depth,objs = None,\
+                segmented=0,folder='JPEGImages',filename='Unknown',\
+                path = './JEPGImages',database = 'Unknown'):
         self.folder = folder
         self.filename = filename
         self.path = path  
@@ -73,20 +74,21 @@ class vocXml:
         self.depth = depth
         self.segmented = segmented
         if objs is None:
-            self.objs = 0*[vocXmlobj()]
+            # self.objs = 0*[vocXmlobj()]
+            self.objs = []
         else:
             self.objs = objs
 
-    def copyTo(self,inputOutput):
-        inputOutput.folder = self.folder 
-        inputOutput.filename = self.filename 
-        inputOutput.path = self.path 
-        inputOutput.database = self.database
-        inputOutput.width = self.width 
-        inputOutput.height = self.height 
-        inputOutput.depth = self.depth
-        inputOutput.segmented = self.segmented 
-        inputOutput.objs = [x.copy() for x in self.objs]
+    #def copyTo(self,inputOutput):
+    #    inputOutput.folder = self.folder 
+    #    inputOutput.filename = self.filename 
+    #    inputOutput.path = self.path 
+    #    inputOutput.database = self.database
+    #    inputOutput.width = self.width 
+    #    inputOutput.height = self.height 
+    #    inputOutput.depth = self.depth
+    #    inputOutput.segmented = self.segmented 
+    #    inputOutput.objs = [x.copy() for x in self.objs]
 
     def copy(self):
         out = vocXml(self.folder,self.filename,self.path,self.database,\
@@ -96,9 +98,16 @@ class vocXml:
 
 def xml_read(path):
     #Unimportant infomations will be loaded with try, set default if load fail 
-    out = vocXml()
     xml_tree = ET.parse(path) 
     xml_root = xml_tree.getroot()
+
+    w = int(xml_root.find('size').find('width').text)
+    h = int(xml_root.find('size').find('height').text)
+    d = int(xml_root.find('size').find('depth').text)
+
+    out = vocXml(width=w,height=h,depth=d)
+
+    out.segmented = int(xml_root.find('segmented').text)
 
     p_xml_element = xml_root.find('folder')
     if p_xml_element is not None and p_xml_element.text is not None:
@@ -116,24 +125,19 @@ def xml_read(path):
         if p_xml_element_1 is not None and p_xml_element_1.text is not None:
             out.database = p_xml_element_1.text
 
-    out.width = int(xml_root.find('size').find('width').text)
-    out.height = int(xml_root.find('size').find('height').text)
-    out.depth = int(xml_root.find('size').find('depth').text)
-    out.segmented = int(xml_root.find('segmented').text)
     #objects
     xml_obj_all = xml_root.findall('object')
     for xml_obj_one in xml_obj_all:
-        xml_obj_one_dict = vocXmlobj()
-        xml_obj_one_dict.name = xml_obj_one.find('name').text
+        _name = xml_obj_one.find('name').text
+        _xmin = int(xml_obj_one.find('bndbox').find('xmin').text)
+        _ymin = int(xml_obj_one.find('bndbox').find('ymin').text)
+        _xmax = int(xml_obj_one.find('bndbox').find('xmax').text)
+        _ymax = int(xml_obj_one.find('bndbox').find('ymax').text)
+        xml_obj_one_dict = vocXmlobj(name=_name,xmin=_xmin,ymin=_ymin,xmax=_xmax,ymax=_ymax)        
         xml_obj_one_dict.pose = xml_obj_one.find('pose').text
         xml_obj_one_dict.truncated = int(xml_obj_one.find('truncated').text)
         xml_obj_one_dict.difficult = int(xml_obj_one.find('difficult').text)
-        xml_obj_one_dict.xmin = int(xml_obj_one.find('bndbox').find('xmin').text)
-        xml_obj_one_dict.ymin = int(xml_obj_one.find('bndbox').find('ymin').text)
-        xml_obj_one_dict.xmax = int(xml_obj_one.find('bndbox').find('xmax').text)
-        xml_obj_one_dict.ymax = int(xml_obj_one.find('bndbox').find('ymax').text)
         out.objs.append(xml_obj_one_dict)
-    
     return out
 
 def xml_write(filename,vocxml_info):
@@ -172,7 +176,6 @@ def xml_write(filename,vocxml_info):
             print('Error while saving \"{0}\"'.format(filename))
             flag = False
     return flag
-
 
 #inplace
 #return True if nothing is changed

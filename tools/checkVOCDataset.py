@@ -15,11 +15,12 @@ def check_voc(voc_root_path,to_check_size):
     #read voc data list
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
-    pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg','.xml',True,True)
+    pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg.JPG.JPEG','.xml',True,True)
 
     #make move path and move other files  
-    move_jpeg_dir = os.path.join(voc_root_path,'others','JPEGImages')
-    move_anno_dir = os.path.join(voc_root_path,'others','Annotations')
+    move_dir = os.path.join(voc_root_path,'others')
+    move_jpeg_dir = os.path.join(move_dir,'JPEGImages')
+    move_anno_dir = os.path.join(move_dir,'Annotations')
     pb.makedirs(move_jpeg_dir)
     pb.makedirs(move_anno_dir)
     for x in others_in_jpeg:
@@ -64,10 +65,9 @@ def check_voc(voc_root_path,to_check_size):
     except Exception as e:
         pass
     try:
-        os.rmdir(args.move)
+        os.rmdir(move_dir)
     except Exception as e:
         pass
-
 
     #print bad size images
     bad_img_size_log = list()
@@ -78,10 +78,21 @@ def check_voc(voc_root_path,to_check_size):
                     os.path.basename(xml_path),\
                     img_shape,\
                     xml.height, xml.width, xml.depth)
-            bad_img_size_log.append(one_log)
             print(one_log)
-        print('...')
-    return bad_img_size_log
+            if len(bad_img_size_list>3):
+                print('See others in \"size_error_list.txt\"')
+            print('deal with the size errors and check again.')
+
+    # save error list
+    if len(bad_img_size_list)!=0:
+        with open(os.path.join(args.dir,'size_error_list.txt'),'w') as fp:
+            for img_shape, xml, xml_path in bad_img_size_list[:3]:
+                one_log = '{0}  img={1} vs xml=({2}, {3}, {4}).'.format(\
+                    os.path.basename(xml_path),\
+                    img_shape,\
+                    xml.height, xml.width, xml.depth)
+                fp.write(one_log+'\n')
+    return len(bad_img_size_list)==0
 
 def countVoc(voc_root_path):
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
@@ -110,7 +121,7 @@ def countVoc(voc_root_path):
 def cutVoc(voc_root_path,rate=None):
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
-    pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg','.xml',True,True)
+    pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg.JPG.JPEG','.xml',True,True)
     save_root_path = os.path.join(voc_root_path,'cutVoc')
     #TODO: to speed up 
     save_path_dict = {}
@@ -164,18 +175,8 @@ if __name__=='__main__':
         if str_in !='Y' and str_in !='y':
             sys.exit('user quit')
 
-    bad_img_size_log = check_voc(args.dir, args.fast=='NOT_MENTIONED')
-    if len(bad_img_size_log)!=0:
-        with open(os.path.join(args.dir,'size_error_list.txt'),'w') as fp:
-            for one_log in bad_img_size_log:
-                fp.write(one_log+'\n')
-        print('deal with the size errors and check again.')
-    else:
+    no_size_error = check_voc(args.dir, args.fast=='NOT_MENTIONED')
+    if no_size_error:
         countVoc(args.dir)
         if args.cut != 'NOT_MENTIONED':
             cutVoc(args.dir, args.cut)
-
-    
-
-
-          

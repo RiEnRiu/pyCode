@@ -6,6 +6,7 @@ sys.path.append(__pyBoost_root_path)
 import pyBoost as pb
 
 import cv2
+import shutil
 import argparse
 import json
 import tqdm
@@ -18,25 +19,35 @@ def resize_img_only(args):
         if(str_in !='Y' and str_in !='y'):
             sys.exit('user quit')
 
+    img_exts = '.jpg.png.jpeg.JPG.PNG.JPEG'
     if args.recursion=='NOT_MENTIONED':
-        file_relative = pb.scan_file(args.dir, '.jpg.png.jpeg', False,True)  
+        file_relative = pb.scan_file(args.dir, img_exts, False,True)  
     else:
-        file_relative = pb.deep_scan_file(args.dir, '.jpg.png.jpeg', False,True)
+        file_relative = pb.deep_scan_file(args.dir, img_exts, False,True)
 
-    if(args.save is None):
-        read_img_list = [os.path.join(args.dir,x) for x in file_relative]
-        save_img_list = read_img_list
-    else:
-        pb.makedirs(args.save)
-        read_img_list = [os.path.join(args.dir,x) for x in file_relative]
-        save_img_list = [os.path.join(args.save,x) for x in file_relative]
-    
     wh = tuple(json.loads(args.wh))
     im_rszr = pb.img.imResizer(args.rtype,wh,args.inter)
-    for read_path,save_path in tqdm.tqdm(zip(read_img_list,save_img_list)):
-        img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
-        rimg = im_rszr.imResize(img)
-        cv2.imwrite(save_path,rimg)
+    read_img_list = [os.path.join(args.dir,x) for x in file_relative]
+    # save in local and cover files
+    if(args.save is None):
+        for read_path in tqdm.tqdm(read_img_list,ncols=55):
+            img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
+            if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
+                continue
+            rimg = im_rszr.imResize(img)
+            cv2.imwrite(read_path,rimg)
+    # save in another folder
+    else:
+        save_img_list = [os.path.join(args.save,x) for x in file_relative]
+        pb.makedirs(args.save)
+        for read_path,save_path in tqdm.tqdm(zip(read_img_list,save_img_list),ncols=55):
+            img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
+            if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
+                rimg = img
+                shutil.copy(read_path,save_path)
+            else:
+                rimg = im_rszr.imResize(img)
+                cv2.imwrite(save_path,rimg)
     return 
 
 def resize_voc(args):
@@ -50,31 +61,39 @@ def resize_voc(args):
     jpg_dir = os.path.join(args.dir,'JPEGImages')
     xml_dir = os.path.join(args.dir,'Annotations')
 
-    relative_pairs, o1 ,o2 = pb.scan_pair(jpg_dir,xml_dir,'.jpg.jpeg','.xml',False,True)
+    relative_pairs, o1 ,o2 = pb.scan_pair(jpg_dir,xml_dir,'.jpg.jpeg.JPG.JPEG','.xml',False,True)
 
+    wh = tuple(json.loads(args.wh))
+    voc_rszr = pb.voc.vocResizer(args.rtype,wh,args.inter)
+    read_jpg_list = [os.path.join(jpg_dir,x[0]) for x in relative_pairs]
+    read_xml_list = [os.path.join(xml_dir,x[1]) for x in relative_pairs]
+    # save in local and cover files
     if(args.save is None):
-        read_jpg_list = [os.path.join(jpg_dir,x[0]) for x in relative_pairs]
-        read_xml_list = [os.path.join(xml_dir,x[1]) for x in relative_pairs]
-        save_jpg_list = read_jpg_list
-        save_xml_list = read_xml_list
+        for imgrp,xmlrp in tqdm.tqdm(zip(read_jpg_list,read_xml_list)):
+            img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED,ncols=55)
+            if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
+                continue
+            rimg = voc_rszr.imResize(img)
+            cv2.imwrite(imgsp,rimg)
+            voc_rszr.xmlResizeInDisk(xmlrp,xmlsp)
+    # save in another folder
     else:
-        read_jpg_list = [os.path.join(jpg_dir,x[0]) for x in relative_pairs]
-        read_xml_list = [os.path.join(xml_dir,x[1]) for x in relative_pairs]
         save_jpg_dir = os.path.join(args.save,'JPEGImages')
         save_xml_dir = os.path.join(args.save,'Annotations')
         pb.makedirs(save_jpg_dir)
         pb.makedirs(save_xml_dir)
         save_jpg_list = [os.path.join(save_jpg_dir,x[0]) for x in relative_pairs]
         save_xml_list = [os.path.join(save_xml_dir,x[1]) for x in relative_pairs]
-
-    wh = tuple(json.loads(args.wh))
-    voc_rszr = pb.voc.vocResizer(args.rtype,wh,args.inter)
-    for imgrp,xmlrp,imgsp,xmlsp in \
-            tqdm.tqdm(zip(read_jpg_list,read_xml_list,save_jpg_list,save_xml_list)):
-        img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED)
-        rimg = voc_rszr.imResize(img)
-        cv2.imwrite(imgsp,rimg)
-        voc_rszr.xmlResizeInDisk(xmlrp,xmlsp)
+        for imgrp,xmlrp,imgsp,xmlsp in \
+                tqdm.tqdm(zip(read_jpg_list,read_xml_list,save_jpg_list,save_xml_list)):
+            img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED,ncols=55)
+            if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
+                shutil.copy(imgrp,imgsp)
+                shutil.copy(xmlrp,xmlsp)
+            else:
+                rimg = voc_rszr.imResize(img)
+                cv2.imwrite(imgsp,rimg)
+                voc_rszr.xmlResizeInDisk(xmlrp,xmlsp)
     return 
 
 

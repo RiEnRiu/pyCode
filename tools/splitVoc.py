@@ -66,7 +66,8 @@ def move_test_data_set(dir):
     # read all voc data list
     jpg_path = os.path.join(dir,'JPEGImages')
     xml_path = os.path.join(dir,'Annotations')
-    pairs,o1,o2 = pb.scan_pair(jpg_path, xml_path, '.jpg.jpeg.png', '.xml',\
+    img_exts = '.jpg.jpeg.png.JPG.JPEG.PNG'
+    pairs,o1,o2 = pb.scan_pair(jpg_path, xml_path, img_exts, '.xml',\
                                 with_root_dir=False, \
                                 with_ext=True)
     pairs_front_name = {pb.splitext(p[0])[0]:p for p in pairs}

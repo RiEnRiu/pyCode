@@ -133,6 +133,7 @@ def cutVoc(voc_root_path,rate=None):
         img = cv2.imread(img_path)
         #cut and save
         objs_index = 10000
+        img_front_name = pb.splitext(os.path.basename(xml_path))[0]
         for obj in xml.objs:
             obj_save_path = save_path_dict.get(obj.name)
             if obj_save_path is None:
@@ -148,14 +149,50 @@ def cutVoc(voc_root_path,rate=None):
                 obj.xmax = min(img.shape[1]-1,int(obj.xmax+obj_w*rate))
                 obj.ymax = min(img.shape[0]-1,int(obj.ymax+obj_h*rate))
             img_obj = img[obj.ymin:obj.ymax+1,obj.xmin:obj.xmax+1]
-            save_full_name = '{0}_{1}.jpg'.format(os.path.basename(xml_path)[:-4], objs_index)
+            save_full_name = '{0}_{1}.jpg'.format(img_front_name, objs_index)
             obj_save_full_path = os.path.join(obj_save_path, save_full_name)
             if cv2.imwrite(obj_save_full_path, img_obj)==False:
                 print('Fail to save {0} to {1}'.format(os.path.basename(img_path), obj_save_full_path))
             objs_index += 1
 
-def repair_voc():
-    pass
+def remake_xml(voc_root_path):
+    cut_dir = os.path.join(voc_root_path,'cutVoc')
+    if os.path.isdir(cut_dir)==False:
+        raise ValueError('No cutVoc folder in: {0}'.format(voc_root_path))
+    all_cut_file = pb.deep_scan_file(cut_dir,'.jpg',False,False)
+    boxes_label = dict()
+    for f in all_cut_file:
+        l,n = os.path.split(f)
+        boxes_label[n] = l
+
+    anno_path = os.path.join(voc_root_path,'Annotations')
+    all_xml_path = pb.scan_file(anno_path,'.xml',True,True)
+    save_root_path = os.path.join(voc_root_path,'Annotations_remade')
+    pb.makedirs(save_root_path)
+    #TODO: to speed up 
+    for xml_path in tqdm.tqdm(all_xml_path,ncols=55):
+        #read
+        xml = pb.voc.xml_read(xml_path)
+        if len(xml.objs)==0:
+            continue
+        #cut name
+        img_front_name = pb.splitext(os.path.basename(xml_path))[0]
+        objs_index = 10000+len(xml.objs)-1
+        for i in range(len(xml.objs)-1,-1,-1):
+            obj = xml.objs[i]
+            save_front_name = '{0}_{1}'.format(img_front_name, objs_index)
+            changed_label = boxes_label.get(save_front_name)
+            if changed_label is None:
+                xml.objs.pop(i)
+            else:
+                obj.name = changed_label
+            objs_index -= 1
+        xml_full_path = os.path.join(save_root_path,os.path.basename(xml_path))
+        pb.voc.xml_write(xml_full_path,xml)
+    return
+
+    
+    
    
 
 
@@ -165,7 +202,8 @@ if __name__=='__main__':
     parser.add_argument('--dir', type = str,required=True, help = 'Where is the VOC data set?')
     parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Sure to cover the source file? \"OFF\"')
     parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='Skip checking image size to be faster. \"OFF\"')
-    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir"/cut\", Set value to enlarge bndbox.')
+    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir"/cutVoc\", Set value to enlarge bndbox.')
+    parser.add_argument('-r','--remake',nargs='?',default='NOT_MENTIONED',help = 'remake .xml from \"$dir"/cutVoc\" in \"$dir"/Annotations_remade\"')
     args = parser.parse_args()
 
     #quiet mode
@@ -175,6 +213,12 @@ if __name__=='__main__':
         if str_in !='Y' and str_in !='y':
             sys.exit('user quit')
 
+    # remake annotations
+    if args.remake!='NOT_MENTIONED':
+        remake_xml(args.dir)
+        sys.exit()
+        
+    # to check
     no_size_error = check_voc(args.dir, args.fast=='NOT_MENTIONED')
     if no_size_error:
         countVoc(args.dir)

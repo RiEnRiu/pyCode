@@ -96,7 +96,7 @@ def __do_deep_scan_file(scanned_dir, output, with_root_dir, relative_path = ''):
     else:
         output.extend([os.path.join(relative_path, x) for x in files_name])
 
-    for folder in folders_full_path:
+    for folder in folders_name:
         __do_deep_scan_file(scanned_dir,output,with_root_dir,os.path.join(relative_path,folder))
 
     return
@@ -109,7 +109,7 @@ def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
 
     files_path = []
     __do_deep_scan_file(scanned_dir,files_path, with_root_dir)
-   
+
     if exts_set is None:
         return 
         if with_ext==True:

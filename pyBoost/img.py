@@ -536,6 +536,7 @@ class imResizer:
         self._param[src_size] = output
         return output
 
+    # TODO: error in IMRESIZE_ROUNDUP_CROP
     def imResize(self,src):
         # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
         param = self._transParam(src.shape[1],src.shape[0])

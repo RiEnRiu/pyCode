@@ -11,7 +11,7 @@ import tqdm
 import shutil
 import cv2
 
-def check_voc(voc_root_path,to_check_size):
+def check_bndbox(voc_root_path,to_check_size):
     #read voc data list
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
@@ -94,7 +94,7 @@ def check_voc(voc_root_path,to_check_size):
                 fp.write(one_log+'\n')
     return len(bad_img_size_list)==0
 
-def countVoc(voc_root_path):
+def count_voc(voc_root_path):
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
     pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg','.xml',True,True)
@@ -118,7 +118,7 @@ def countVoc(voc_root_path):
             fp.write('{0:<40} = {1:>6}\n'.format(label, obj_dict[label]))
     return 
 
-def cutVoc(voc_root_path,rate=None):
+def cut_voc(voc_root_path,rate=None):
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
     pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg.JPG.JPEG','.xml',True,True)
@@ -152,7 +152,7 @@ def cutVoc(voc_root_path,rate=None):
             save_full_name = '{0}_{1}.jpg'.format(img_front_name, objs_index)
             obj_save_full_path = os.path.join(obj_save_path, save_full_name)
             if cv2.imwrite(obj_save_full_path, img_obj)==False:
-                print('Fail to save {0} to {1}'.format(os.path.basename(img_path), obj_save_full_path))
+                print('Fail to save: \"{0}\", shape={1}'.format(obj_save_full_path,img_obj.shape))
             objs_index += 1
 
 def remake_xml(voc_root_path):
@@ -201,13 +201,17 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', type = str,required=True, help = 'Where is the VOC data set?')
     parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Sure to cover the source file? \"OFF\"')
-    parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='Skip checking image size to be faster. \"OFF\"')
-    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir"/cutVoc\", Set value to enlarge bndbox.')
+    parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='Skip checking image size to be fast. \"OFF\"')
+    parser.add_argument('-ff','--faster',nargs='?',default='NOT_MENTIONED',help='Skip checking bndbox. \"OFF\"')
+    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir"/cutVoc\", Set rate to enlarge bndbox.')
     parser.add_argument('-r','--remake',nargs='?',default='NOT_MENTIONED',help = 'remake .xml from \"$dir"/cutVoc\" in \"$dir"/Annotations_remade\"')
     args = parser.parse_args()
 
+    print('Check Voc data in: \"{0}\"'.format(os.path.abspath(args.dir)))
+
     #quiet mode
-    if args.quiet=='NOT_MENTIONED':
+    if args.quiet=='NOT_MENTIONED' and (args.faster=='NOT_MENTIONED' or \
+        args.remake!='NOT_MENTIONED'):
         print('You are going to cover the source files. Continue? [Y/N]?')
         str_in = input()
         if str_in !='Y' and str_in !='y':
@@ -217,10 +221,15 @@ if __name__=='__main__':
     if args.remake!='NOT_MENTIONED':
         remake_xml(args.dir)
         sys.exit()
-        
-    # to check
-    no_size_error = check_voc(args.dir, args.fast=='NOT_MENTIONED')
-    if no_size_error:
-        countVoc(args.dir)
-        if args.cut != 'NOT_MENTIONED':
-            cutVoc(args.dir, args.cut)
+
+    # check_box        
+    no_size_error = True
+    if args.faster=='NOT_MENTIONED':
+        no_size_error = check_bndbox(args.dir, args.fast=='NOT_MENTIONED')
+        if no_size_error:
+            count_voc(args.dir)
+            
+    # cut objects off
+    if args.cut != 'NOT_MENTIONED':
+        cut_voc(args.dir, float(args.cut))
+

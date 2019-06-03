@@ -173,10 +173,8 @@ def remake_xml(voc_root_path):
     for xml_path in tqdm.tqdm(all_xml_path,ncols=55):
         #read
         xml = pb.voc.xml_read(xml_path)
-        if len(xml.objs)==0:
-            continue
-        #cut name
-        img_front_name = pb.splitext(os.path.basename(xml_path))[0]
+        xml_full_name = os.path.basename(xml_path)
+        img_front_name = pb.splitext(xml_full_name)[0]
         objs_index = 10000+len(xml.objs)-1
         for i in range(len(xml.objs)-1,-1,-1):
             obj = xml.objs[i]
@@ -187,8 +185,11 @@ def remake_xml(voc_root_path):
             else:
                 obj.name = changed_label
             objs_index -= 1
-        xml_full_path = os.path.join(save_root_path,os.path.basename(xml_path))
-        pb.voc.xml_write(xml_full_path,xml)
+        if len(xml.objs)!=0:
+            xml_full_path = os.path.join(save_root_path, xml_full_name)
+            pb.voc.xml_write(xml_full_path,xml)
+        else:
+            print('Not remake no object xml: \"{0}\"'.format(xml_full_name))
     return
 
     

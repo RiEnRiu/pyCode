@@ -56,3 +56,5 @@ copy .\tools\*.py .\ubuntu\tools
 ::copy to ubuntu
 xcopy /E/Y .\ubuntu X:\
 
+pause
+

@@ -29,6 +29,9 @@
     <Compile Include="ellipsoid.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="huffman_encode.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="logic_easy.py">
       <SubType>Code</SubType>
     </Compile>

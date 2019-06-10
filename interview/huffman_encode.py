@@ -89,7 +89,7 @@ if __name__=='__main__':
     n = 4
     k = 2
     c = [1,1,2,2]
-    print('ans = {0}'.format(encode_poetry(n,k,c)))
+    print('ans = {0}'.format(huffman_encode(n,k,c)))
 
     
     

@@ -14,10 +14,10 @@ def scan_folder(scanned_dir):
         return []
     return [x for x in os.listdir(scanned_dir) if os.path.isdir(os.path.join(scanned_dir,x))]
 
-# this.splitext('123.txt') ->  ['123', '.txt'] ,    the same as os.path.splitext()
-# this.splitext('.txt') ->  ['', '.txt']       , different from os.path.splitext()
-# this.splitext('123.') ->  ['123', '']        , different from os.path.splitext()
-# this.splitext('123') ->  ['123', '']         ,    the same as os.path.splitext()
+# this.splitext('123.txt') = ('123','.txt') , os.path.splitext('123.txt') = ('123','.txt')
+# this.splitext('.txt')    = ('','.txt')    , os.path.splitext('.txt')    = ('.txt','')
+# this.splitext('123.')    = ('123','')     , os.path.splitext('123.')    = ('123','.')
+# this.splitext('123')     = ('123','')     , os.path.splitext('123')     = ('123','')
 def splitext(file_full_name):
     if file_full_name[-1]=='.':
         return file_full_name,''

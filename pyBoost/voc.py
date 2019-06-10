@@ -671,6 +671,8 @@ def bndboxIou(bb1,bb2):
     uni = bndboxArea(bb1) + bndboxArea(bb2) - inters
     return inters/uni
 
+
+
 def iouMatrix(bbs1,bbs2):
     bbs1_area = [bndboxArea(x) for x in bbs1]
     bbs2_area = [bndboxArea(x) for x in bbs2]
@@ -683,6 +685,34 @@ def iouMatrix(bbs1,bbs2):
             uni = a1 + a2 - inters
             iou_matrix[i1,i2] = inters/uni
     return iou_matrix
+
+def bndboxGIou(bb1,bb2):
+    inters = bndboxIntersect(bb1,bb2)
+    areaA = bndboxArea(bb1)
+    areaB = bndboxArea(bb2)
+    uni = areaA + areaB - inters
+    areaC = bndboxArea([min(bb1[0],bb2[0]),\
+                        min(bb1[1],bb2[1]),\
+                        max(bb1[2],bb2[2]),\
+                        max(bb1[3],bb2[3])])
+    return inters/uni - (areaC-uni)/areaC
+
+def gIouMatrix(bbs1,bbs2):
+    bbs1_area = [bndboxArea(x) for x in bbs1]
+    bbs2_area = [bndboxArea(x) for x in bbs2]
+    giou_matrix = np.zeros((len(bbs1),len(bbs2)),dtype=np.float64)
+    for i1,areaA in enumerate(bbs1_area):
+        for i2,areaB in enumerate(bbs2_area):
+            bb1,bb2 = bbs1[i1],bbs2[i2]
+            inters = bndboxIntersect(bb1,bb2)
+            uni = areaA + areaB - inters
+            areaC = bndboxArea([min(bb1[0],bb2[0]),\
+                        min(bb1[1],bb2[1]),\
+                        max(bb1[2],bb2[2]),\
+                        max(bb1[3],bb2[3])])
+            giou_matrix[i1,i2] = inters/uni - (areaC-uni)/areaC
+    return giou_matrix
+
 
 def bndboxExIntersect(bb1,bb2):
     ixmin = max(bb1[0], bb2[0])
@@ -721,7 +751,7 @@ def exIouMatrix(bbs1,bbs2):
     iou_matrix = np.zeros((len(bbs1),len(bbs2)),dtype=np.float64)
     for i1,a1 in enumerate(bbs1_area):
         for i2,a2 in enumerate(bbs2_area):
-            inters = bndboxExIntersect(det,trk)
+            inters = bndboxExIntersect(bbs1[i1],bbs2[i2])
             uni = a1 + a2 - inters
             iou_matrix[i1,i2] = inters/uni
     return iou_matrix

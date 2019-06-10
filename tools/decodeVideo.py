@@ -74,7 +74,9 @@ if __name__=='__main__':
     else:
         all_files = pb.scan_file(args.video,None,True,True)
         for one_file in all_files:
-            if pb.splitext(one_file)[1]!='':
+            # if pb.splitext(one_file)[1]!='':
+            ext = pb.splitext(one_file)[1]
+            if ext=='.avi' or ext=='.mp4' or ext=='.AVI' or ext=='.MP4':
                 cap = cv2.VideoCapture(one_file)
                 if cap.isOpened() and cap.read()[0]:
                     cap.release()

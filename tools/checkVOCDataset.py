@@ -193,10 +193,6 @@ def remake_xml(voc_root_path):
     return
 
     
-    
-   
-
-
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()

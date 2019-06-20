@@ -10,6 +10,7 @@ import argparse
 import tqdm
 import shutil
 import cv2
+import random
 
 def check_bndbox(voc_root_path,to_check_size):
     #read voc data list
@@ -119,6 +120,7 @@ def count_voc(voc_root_path):
     return 
 
 def cut_voc(voc_root_path,rate=None):
+    rate = 0 if rate is None else float(rate)
     jpeg_path = os.path.join(voc_root_path,'JPEGImages')
     anno_path = os.path.join(voc_root_path,'Annotations')
     pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg.JPG.JPEG','.xml',True,True)
@@ -141,21 +143,21 @@ def cut_voc(voc_root_path,rate=None):
                 pb.makedirs(obj_save_path)
                 save_path_dict[obj.name] = obj_save_path
             #broaden bndbox
-            if rate is not None:
-                obj_w = obj.xmax+1-obj.xmin
-                obj_h = obj.ymax+1-obj.ymin
-                obj.xmin = max(0,int(obj.xmin-obj_w*rate))
-                obj.ymin = max(0,int(obj.ymin-obj_h*rate))
-                obj.xmax = min(img.shape[1]-1,int(obj.xmax+obj_w*rate))
-                obj.ymax = min(img.shape[0]-1,int(obj.ymax+obj_h*rate))
+            obj_w = obj.xmax+1-obj.xmin
+            obj_h = obj.ymax+1-obj.ymin
+            obj.xmin = max(0,int(obj.xmin-obj_w*rate))
+            obj.ymin = max(0,int(obj.ymin-obj_h*rate))
+            obj.xmax = min(img.shape[1]-1,int(obj.xmax+obj_w*rate))
+            obj.ymax = min(img.shape[0]-1,int(obj.ymax+obj_h*rate))
             img_obj = img[obj.ymin:obj.ymax+1,obj.xmin:obj.xmax+1]
             save_full_name = '{0}_{1}.jpg'.format(img_front_name, objs_index)
             obj_save_full_path = os.path.join(obj_save_path, save_full_name)
             if cv2.imwrite(obj_save_full_path, img_obj)==False:
                 print('Fail to save: \"{0}\", shape={1}'.format(obj_save_full_path,img_obj.shape))
             objs_index += 1
+    return
 
-def remake_xml(voc_root_path):
+def remake_xml(voc_root_path, save_root_path=None):
     cut_dir = os.path.join(voc_root_path,'cutVoc')
     if os.path.isdir(cut_dir)==False:
         raise ValueError('No cutVoc folder in: {0}'.format(voc_root_path))
@@ -167,7 +169,9 @@ def remake_xml(voc_root_path):
 
     anno_path = os.path.join(voc_root_path,'Annotations')
     all_xml_path = pb.scan_file(anno_path,'.xml',True,True)
-    save_root_path = os.path.join(voc_root_path,'Annotations_remade')
+
+    if save_root_path is None:
+        save_root_path = os.path.join(voc_root_path,'Annotations_remade')
     pb.makedirs(save_root_path)
     #TODO: to speed up 
     for xml_path in tqdm.tqdm(all_xml_path,ncols=55):
@@ -192,6 +196,38 @@ def remake_xml(voc_root_path):
             print('Not remake no object xml: \"{0}\"'.format(xml_full_name))
     return
 
+
+def draw_voc(voc_root_path, save_root_path=None):
+    jpeg_path = os.path.join(voc_root_path,'JPEGImages')
+    anno_path = os.path.join(voc_root_path,'Annotations')
+    pairs, others_in_jpeg, others_in_anno = pb.scan_pair(jpeg_path,anno_path,'.jpg.jpeg.JPG.JPEG','.xml',True,True)
+    if save_root_path is None:
+        save_root_path = os.path.join(voc_root_path,'draw')
+        pb.makedirs(save_root_path)
+    #TODO: to speed up 
+    label_color = {}
+    random.seed(10086)
+    for img_path, xml_path in tqdm.tqdm(pairs,ncols=55):
+        #read
+        xml = pb.voc.xml_read(xml_path)
+        img = cv2.imread(img_path)
+        img_full_name = os.path.basename(img_path)
+        img_save_path = os.path.join(save_root_path, img_full_name)
+        for obj in xml.objs:
+            label = obj.name
+            color = label_color.get(label)
+            if color is None:
+                color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
+                label_color[label] = color
+            cv2.rectangle(img, (int(obj.xmin),int(obj.ymin)), \
+                          (int(obj.xmax),int(obj.ymax)), color, 3)
+            cv2.putText(img, label, \
+                        (int(obj.xmin*0.5+obj.xmax*0.5),int(obj.ymin*0.5+obj.ymax*0.5)), \
+                        cv2.FONT_HERSHEY_COMPLEX, 1, color, 3)
+        cv2.imwrite(img_save_path,img)
+    return
+    
+
     
 if __name__=='__main__':
 
@@ -200,24 +236,29 @@ if __name__=='__main__':
     parser.add_argument('-q','--quiet',nargs='?',default='NOT_MENTIONED',help='Sure to cover the source file? \"OFF\"')
     parser.add_argument('-f','--fast',nargs='?',default='NOT_MENTIONED',help='Skip checking image size to be fast. \"OFF\"')
     parser.add_argument('-ff','--faster',nargs='?',default='NOT_MENTIONED',help='Skip checking bndbox. \"OFF\"')
-    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir"/cutVoc\", Set rate to enlarge bndbox.')
-    parser.add_argument('-r','--remake',nargs='?',default='NOT_MENTIONED',help = 'remake .xml from \"$dir"/cutVoc\" in \"$dir"/Annotations_remade\"')
+    parser.add_argument('-c','--cut',nargs='?',default='NOT_MENTIONED',help = 'Whether cut objects into \"$dir$"/cutVoc\" with enlarging bndbox by $cut$. \"0\"')
+    parser.add_argument('-r','--remake',nargs='?',default='NOT_MENTIONED',help = 'remake .xml from \"$dir$"/cutVoc\" in \"$remake$\". \"$dir$"/Annotations_remade\"')
+    parser.add_argument('-d','--draw',nargs='?',default='NOT_MENTIONED',help = 'draw voc in \"$draw$\". \"$dir$/draw\"')
     args = parser.parse_args()
 
     print('Check Voc data in: \"{0}\"'.format(os.path.abspath(args.dir)))
 
-    #quiet mode
-    if args.quiet=='NOT_MENTIONED' and (args.faster=='NOT_MENTIONED' or \
-        args.remake!='NOT_MENTIONED'):
+    # remake annotations
+    if args.remake!='NOT_MENTIONED':
+        remake_xml(args.dir, args.remake)
+        sys.exit()
+
+    # draw voc
+    if args.draw != 'NOT_MENTIONED':
+        draw_voc(args.dir, args.draw)
+        sys.exit()
+
+    # quiet mode
+    if args.quiet=='NOT_MENTIONED' and args.faster=='NOT_MENTIONED':
         print('You are going to cover the source files. Continue? [Y/N]?')
         str_in = input()
         if str_in !='Y' and str_in !='y':
             sys.exit('user quit')
-
-    # remake annotations
-    if args.remake!='NOT_MENTIONED':
-        remake_xml(args.dir)
-        sys.exit()
 
     # check_box        
     no_size_error = True
@@ -225,8 +266,12 @@ if __name__=='__main__':
         no_size_error = check_bndbox(args.dir, args.fast=='NOT_MENTIONED')
         if no_size_error:
             count_voc(args.dir)
-            
+
     # cut objects off
     if args.cut != 'NOT_MENTIONED':
-        cut_voc(args.dir, float(args.cut))
+        cut_voc(args.dir, args.cut)
+        sys.exit()
+            
+
+
 

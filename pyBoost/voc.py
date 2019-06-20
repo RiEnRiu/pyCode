@@ -33,38 +33,76 @@ import numpy as np
 import pickle
 import cv2
 
-class vocXmlobj:
+from scipy.optimize import linear_sum_assignment
+
+
+
+
+class bndbox():
+    def __init__(self, _xmin, _ymin, _xmax, _ymax):
+        if _xmax + 1 <_xmin or _ymax + 1< _ymin:
+            print('init bndbox Error : ')
+            raise ValueError('xmax < xmin or ymax < ymin')
+        self.xmin = _xmin
+        self.ymin = _ymin
+        self.xmax = _xmax
+        self.ymax = _ymax
+
+    def area(self):
+        return (self.xmax - self.xmin + 1) * (self.ymax - self.ymin + 1)
+
+    def contains(self,pt):
+        return self.xmin <= pt[0] and\
+                pt[0] < self.xmax + 1 and\
+                self.ymin <= pt[1] and\
+                pt[1] < self.ymax + 1
+
+    def empty(self):
+        return self.ymax-self.ymin<=-1 or self.height<=-1
+
+    def roi(self,img):
+        return img[self.ymin:self.ymax+1,self.xmin:self.xmax+1]
+
+    def tolist(self):
+        return [self.xmin,self.ymin,self.xmax,self.ymax]
+
+    def __getitem__(self,i):
+        if i==0 or i==-4:
+            return self.xmin
+        elif i==1 or i==-3:
+            return self.ymin
+        elif i==2 or i==-2:
+            return self.xmax
+        elif i==3 or i==-1:
+            return self.ymax
+        else:
+            raise IndexError('bndbox out of range')
+
+    def tocvRect(self):
+        return pbimg.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)
+
+    def copy(self):
+        return bndbox(_xmin=self.xmin,_ymin=self.ymin,\
+                      _xmax=self.xmax,_ymax=self.ymax)
+
+class vocXmlobj(bndbox):
     def __init__(self,name,xmin,ymin,xmax,ymax,\
                 pose = 'Unspecified',truncated = 0,difficult = 0):
+        bndbox.__init__(self,xmin,ymin,xmax,ymax)
         self.name = name
         self.pose = pose
         self.truncated = truncated
         self.difficult = difficult
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-
-    #def copyTo(self,inputOutput):
-    #    inputOutput.name = self.name
-    #    inputOutput.pose = self.pose 
-    #    inputOutput.truncated = self.truncated 
-    #    inputOutput.difficult = self.difficult 
-    #    inputOutput.xmin = self.xmin 
-    #    inputOutput.ymin = self.ymin 
-    #    inputOutput.xmax = self.xmax 
-    #    inputOutput.ymax = self.ymax
 
     def copy(self):
-        out = vocXmlobj(self.name,self.pose,self.truncated,self.difficult,\
-                        self.xmin,self.ymin,self.xmax,self.ymax)
-        return out
-
+        return vocXmlobj(name=self.name,xmin=self.xmin,ymin=self.ymin,\
+                         xmax=self.xmax,ymax=self.ymax,pose=self.pose,\
+                         truncated=self.truncated,difficult=self.difficult)
 
 class vocXml:
     def __init__(self,width,height,depth,objs = None,\
                 segmented=0,folder='JPEGImages',filename='Unknown',\
-                path = './JEPGImages',database = 'Unknown'):
+                path = './JEPGImages',database = 'Unknown',verified=None):
         self.folder = folder
         self.filename = filename
         self.path = path  
@@ -78,23 +116,24 @@ class vocXml:
             self.objs = []
         else:
             self.objs = objs
-
-    #def copyTo(self,inputOutput):
-    #    inputOutput.folder = self.folder 
-    #    inputOutput.filename = self.filename 
-    #    inputOutput.path = self.path 
-    #    inputOutput.database = self.database
-    #    inputOutput.width = self.width 
-    #    inputOutput.height = self.height 
-    #    inputOutput.depth = self.depth
-    #    inputOutput.segmented = self.segmented 
-    #    inputOutput.objs = [x.copy() for x in self.objs]
+        self.verified=verified
 
     def copy(self):
-        out = vocXml(self.folder,self.filename,self.path,self.database,\
-                    self.width,self.height,self.depth,self.segmented)
-        out.objs = [x.copy() for x in self.objs]
-        return out
+        return vocXml(width=self.width,height=self.height,depth=self.depth,\
+                      objs=[x.copy() for x in self.objs],\
+                      segmented=self.segmented,folder=self.folder,\
+                      filename=self.filename,path=self.path,\
+                      database=self.databas,verified=self.verified)
+
+def bndboxMatch(objs1,objs2, giou_thresh):
+    giou_matrix = gIouMatrix(objs1,objs2)
+    result = linear_sum_assignment(-giou_matrix)
+    out = []
+    for m0,m1 in zip(result[0],result[1]):
+        if giou_matrix[m0,m1]>=giou_thresh:
+            out.append([m0,m1])
+    return out
+
 
 def xml_read(path):
     #Unimportant infomations will be loaded with try, set default if load fail 
@@ -106,6 +145,10 @@ def xml_read(path):
     d = int(xml_root.find('size').find('depth').text)
 
     out = vocXml(width=w,height=h,depth=d)
+
+    p_xml_verified = xml_root.attrib.get('verified')
+    if p_xml_verified is not None:
+        out.verified = p_xml_verified
 
     out.segmented = int(xml_root.find('segmented').text)
 
@@ -145,33 +188,36 @@ def xml_write(filename,vocxml_info):
     with open(filename,'w') as xml_file:
         flag = True
         try:
-            xml_file.write('<annotation>'+'\n')
-            xml_file.write('    <folder>'+vocxml_info.folder+'</folder>'+'\n')
-            xml_file.write('    <filename>'+vocxml_info.filename+'</filename>'+'\n')
-            xml_file.write('    <path>' +vocxml_info.path+ '</path>' + '\n')
-            xml_file.write('    <source>' + '\n')
-            xml_file.write('        <database>'+vocxml_info.database+'</database>'  + '\n')
-            xml_file.write('    </source>' + '\n')
-            xml_file.write('    <size>' + '\n')
-            xml_file.write('        <width>' + str(vocxml_info.width)+ '</width>' + '\n')
-            xml_file.write('        <height>'  +str(vocxml_info.height)+ '</height>' + '\n')
-            xml_file.write('        <depth>' +str(vocxml_info.depth)+ '</depth>' + '\n')
-            xml_file.write('    </size>' + '\n')
-            xml_file.write('    <segmented>'+str(vocxml_info.segmented)+'</segmented>' + '\n')
+            if vocxml_info.verified is None:
+                xml_file.write('<annotation>\n')
+            else:
+                xml_file.write('<annotation verified=\"{0}\">\n'.format(vocxml_info.verified))
+            xml_file.write('    <folder>{0}</folder>\n'.format(vocxml_info.folder))
+            xml_file.write('    <filename>{0}</filename>\n'.format(vocxml_info.filename))
+            xml_file.write('    <path>{0}</path>\n'.format(vocxml_info.path))
+            xml_file.write('    <source>\n')
+            xml_file.write('        <database>{0}</database>\n'.format(vocxml_info.database))
+            xml_file.write('    </source>\n')
+            xml_file.write('    <size>\n')
+            xml_file.write('        <width>{0}</width>\n'.format(int(vocxml_info.width)))
+            xml_file.write('        <height>{0}</height>\n'.format(int(vocxml_info.height)))
+            xml_file.write('        <depth>{0}</depth>\n'.format(int(vocxml_info.depth)))
+            xml_file.write('    </size>\n')
+            xml_file.write('    <segmented>{0}</segmented>\n'.format(vocxml_info.segmented))
             for  one_obj in vocxml_info.objs:
-                xml_file.write('    <object>' + '\n')
-                xml_file.write('        <name>'+one_obj.name+ '</name>'  + '\n')
-                xml_file.write('        <pose>'+one_obj.pose+'</pose>' + '\n')
-                xml_file.write('        <truncated>'+str(one_obj.truncated)+'</truncated>' + '\n')
-                xml_file.write('        <difficult>'+str(one_obj.difficult)+'</difficult>'  + '\n')
-                xml_file.write('        <bndbox>' + '\n')
-                xml_file.write('            <xmin>'+str(one_obj.xmin)+'</xmin>'  + '\n')
-                xml_file.write('            <ymin>'+str(one_obj.ymin)+ '</ymin>' + '\n')
-                xml_file.write('            <xmax>'+str(one_obj.xmax)+ '</xmax>' + '\n')
-                xml_file.write('            <ymax>'+str(one_obj.ymax)+ '</ymax>' + '\n')
-                xml_file.write('        </bndbox>'  + '\n')
-                xml_file.write('    </object>' + '\n')
-            xml_file.write('</annotation>' + '\n')
+                xml_file.write('    <object>\n')
+                xml_file.write('        <name>{0}</name>\n'.format(one_obj.name))
+                xml_file.write('        <pose>{0}</pose>\n'.format(one_obj.pose))
+                xml_file.write('        <truncated>{0}</truncated>\n'.format(one_obj.truncated))
+                xml_file.write('        <difficult>{0}</difficult>\n'.format(one_obj.difficult))
+                xml_file.write('        <bndbox>\n')
+                xml_file.write('            <xmin>{0}</xmin>\n'.format(int(one_obj.xmin)))
+                xml_file.write('            <ymin>{0}</ymin>\n'.format(int(one_obj.ymin)))
+                xml_file.write('            <xmax>{0}</xmax>\n'.format(int(one_obj.xmax)))
+                xml_file.write('            <ymax>{0}</ymax>\n'.format(int(one_obj.ymax)))
+                xml_file.write('        </bndbox>\n')
+                xml_file.write('    </object>\n')
+            xml_file.write('</annotation>\n')
         except Exception as e:
             print('Error while saving \"{0}\"'.format(filename))
             flag = False
@@ -586,48 +632,6 @@ class blender():
         return image, xml
 
 
-class bndbox():
-    def __init__(self, _xmin, _ymin, _xmax, _ymax):
-        if _xmax + 1 <_xmin or _ymax + 1< _ymin:
-            print('init bndbox Error : ')
-            raise ValueError('xmax < xmin or ymax < ymin')
-        self.xmin = int(_xmin)
-        self.ymin = int(_ymin)
-        self.xmax = int(_xmax)
-        self.ymax = int(_ymax)
-
-    def area(self):
-        return (self.xmax - self.xmin + 1) * (self.ymax - self.ymin + 1)
-
-    def contains(self,pt):
-        return self.xmin <= pt[0] and\
-                pt[0] < self.xmax + 1 and\
-                self.ymin <= pt[1] and\
-                pt[1] < self.ymax + 1
-
-    def empty(self):
-        return self.ymax-self.ymin<=-1 or self.height<=-1
-
-    def roi(self,img):
-        return img[self.ymin:self.ymax+1,self.xmin:self.xmax+1]
-
-    def tolist(self):
-        return [self.xmin,self.ymin,self.xmax,self.ymax]
-
-    def __getitem__(self,i):
-        if i==0 or i==-4:
-            return self.xmin
-        elif i==1 or i==-3:
-            return self.ymin
-        elif i==2 or i==-2:
-            return self.xmax
-        elif i==3 or i==-1:
-            return self.ymax
-        else:
-            raise IndexError('bndbox out of range')
-
-    def tocvRect(self):
-        return pbimg.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)
 
 def maskToBndbox(mask):
     if len(mask.shape)<2:
@@ -818,7 +822,7 @@ if __name__=='__main__':
 
     def test_adjust_bndbox():
         read_path = r'E:\fusion\frcnn_hand'
-        xml_file_name = pb.scan_file_r(read_path,'.xml',False,True)
+        xml_file_name = pb.deep_scan_file(read_path,'.xml',False,True)
         for one in xml_file_name:
             xml_info = pb.voc.xml_read(os.path.join(read_path,one))
             flag = pb.voc.adjust_bndbox(xml_info)

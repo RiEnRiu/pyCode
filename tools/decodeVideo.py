@@ -110,7 +110,7 @@ if __name__=='__main__':
     num_process = min(args.process, int(multiprocessing.cpu_count())-1)
     num_process = min(len(multi_param),num_process)
     if num_process<=1:
-        decode_one_video(param_pack[0])
+        decode_one_video(multi_param[0])
     else:
         pool = multiprocessing.Pool(num_process) 
         for x in pool.imap_unordered(decode_one_video, multi_param):

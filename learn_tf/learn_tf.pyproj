@@ -43,6 +43,9 @@
     <Compile Include="p035_BPNetworkForIRIS.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="p076_conv2d.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

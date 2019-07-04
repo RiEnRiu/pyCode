@@ -671,6 +671,15 @@ def bndboxIntersect(bb1, bb2):
     return int(iw * ih)
 
 def bndboxIou(bb1,bb2):
+    #ixmin = max(bb1[0], bb2[0])
+    #iymin = max(bb1[1], bb2[1])
+    #ixmax = min(bb1[2], bb2[2])
+    #iymax = min(bb1[3], bb2[3])
+    #iw = ixmax - ixmin + 1
+    #ih = iymax - iymin + 1
+    #inters = iw * ih
+    #uni = (bb2[2] - bb2[0] + 1.) * (bb2[3] - bb2[1] + 1.) + (bb1[2] - bb1[0] + 1.) * (bb1[3] - bb1[1] + 1.) - inters
+    #return inters/uni
     inters = bndboxIntersect(bb1,bb2)
     uni = bndboxArea(bb1) + bndboxArea(bb2) - inters
     return inters/uni
@@ -843,10 +852,183 @@ if __name__=='__main__':
         pb.voc.detToXml(detFile,imgPath,save_path)
         return 
 
+    def test_boxiou():
+        import cv2
+        import numpy as np 
+        import argparse
+        import os
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--img',type=str, default='', help='Image you want to view')
+        args = parser.parse_args()
+
+        # load img
+        user_img_view_size = (1280,720) # hwc
+        if args.img == '':
+            img = np.zeros((user_img_view_size[1],user_img_view_size[0],3),np.uint8)
+        else:
+            img = cv2.imread(args.img)
+            if img is None:
+                img = np.zeros((user_img_view_size[1],user_img_view_size[0],3),np.uint8)
+            elif img.shape!=user_img_view_size:
+                img = pb.img.imResizer(pb.img.IMRESIZE_ROUNDDOWN,\
+                                        user_img_view_size).\
+                                        imResize(img)
+
+        # global data
+        global_data = {}
+        global_data['background'] = img
+        global_data['target_box'] = None
+        global_data['predict_boxes'] = []
+        global_data['bg_with_box'] = img.copy()
+        global_data['img_to_show'] = img.copy()
+
+        global_data['show_name'] = 'bndbox iou viewer'
+        global_data['is_l_down'] = False
+        global_data['is_m_down'] = False
+        global_data['is_r_down'] = False
+        global_data['l_point'] = (0,0)
+        global_data['m_point'] = (0,0)
+        global_data['r_point'] = (0,0)
+
+        def draw_iou_info(img, target_box, predict_boxes):
+            for predict_box in predict_boxes:
+                draw_one_predict_box(img, target_box, predict_box)
+            if target_box is not None:
+                cv2.rectangle(img,(target_box[0],target_box[1]),\
+                              (target_box[2]+1,target_box[3]+1),(255, 255, 255))
+            return
+            
+        def draw_one_predict_box(img, target_box, predict_box):
+            cv2.rectangle(img,(predict_box[0],predict_box[1]),\
+                              (predict_box[2]+1,predict_box[3]+1),(0, 255, 0))
+            if target_box is not None:
+                iou_value = float(pb.voc.bndboxIou(target_box,predict_box))
+                exiou_value = float(pb.voc.bndboxExIou(target_box,predict_box))
+                giou_value = float(pb.voc.bndboxGIou(target_box,predict_box))
+                iou_str = 'iou = {0:5.4}'.format(iou_value)
+                exiou_str = 'exiou = {0:5.4}'.format(exiou_value)
+                giou_str = 'giou = {0:5.4}'.format(giou_value)
+                y_bias = 30
+                iou_p = (int(predict_box[0]*0.9+predict_box[2]*0.1),int(predict_box[1]*0.8+predict_box[3]*0.2))
+                exiou_p = (iou_p[0],iou_p[1]+y_bias)
+                giou_p = (exiou_p[0],exiou_p[1]+y_bias)
+                cv2.putText(img, iou_str, iou_p, \
+                            cv2.FONT_HERSHEY_COMPLEX,0.5,(0,255,0),1)
+                cv2.putText(img, exiou_str, exiou_p, \
+                            cv2.FONT_HERSHEY_COMPLEX,0.5, (0,255,0),1)
+                cv2.putText(img, giou_str, giou_p, \
+                            cv2.FONT_HERSHEY_COMPLEX,0.5, (0,255,0),1)
+            return
+
+        def to_box_and_points(p1,p2):
+            xmin = min(p1[0],p2[0])
+            ymin = min(p1[1],p2[1])
+            xmax = max(p1[0],p2[0])
+            ymax = max(p1[1],p2[1])
+            if xmin==xmax or ymin==ymax:
+                bb = None
+                return None, None, None
+            else:
+                return [xmin,ymin,xmax,ymax], (xmin,ymin+1), (xmax,ymax+1)
+
+        def mouse_call_back(event, x, y, flags, global_data):
+            #global_data = param['global_data']
+            if event == cv2.EVENT_MOUSEMOVE:
+                img_to_show = global_data['bg_with_box'].copy()
+                img_to_show = cv2.line(img_to_show,(x,0),(x,img_to_show.shape[0]),(0,255,0))
+                img_to_show = cv2.line(img_to_show,(0,y),(img_to_show.shape[1],y),(0,255,0))
+                if global_data['is_l_down']:
+                    _, p1,p2 = to_box_and_points(global_data['l_point'],(x,y))
+                    img_to_show = cv2.rectangle(img_to_show,p1,p2,(0, 255, 0))
+                if global_data['is_m_down']:
+                    _, p1,p2 = to_box_and_points(global_data['m_point'],(x,y))
+                    img_to_show = cv2.rectangle(img_to_show,p1,p2,(0, 0, 255))
+                if global_data['is_r_down']:
+                    _, p1,p2 = to_box_and_points(global_data['r_point'],(x,y))
+                    img_to_show = cv2.rectangle(img_to_show,p1,p2,(255, 255, 255))
+                global_data['img_to_show'] = img_to_show
+            elif event == cv2.EVENT_LBUTTONDOWN:
+                global_data['is_l_down'] = True
+                global_data['l_point'] = (x,y)
+            elif event == cv2.EVENT_MBUTTONDOWN:
+                global_data['is_m_down'] = True
+                global_data['m_point'] = (x,y)
+            elif event == cv2.EVENT_RBUTTONDOWN:
+                global_data['is_r_down'] = True
+                global_data['r_point'] = (x,y)
+            elif event == cv2.EVENT_LBUTTONUP:
+                global_data['is_l_down'] = False
+                xmin = min(global_data['l_point'][0],x)
+                ymin = min(global_data['l_point'][1],y)
+                xmax = max(global_data['l_point'][0],x)
+                ymax = max(global_data['l_point'][1],y)
+                if xmin==xmax or ymin==ymax:
+                    bb = None
+                    return
+                else:
+                    bb = [xmin,ymin,xmax,ymax]                           
+                global_data['predict_boxes'].append(bb)
+                global_data['img_to_show'] = global_data['bg_with_box']
+                draw_one_predict_box(global_data['img_to_show'], global_data['target_box'],bb)
+            elif event == cv2.EVENT_MBUTTONUP:
+                global_data['is_m_down'] = False
+                xmin = min(global_data['m_point'][0],x)
+                ymin = min(global_data['m_point'][1],y)
+                xmax = max(global_data['m_point'][0],x)
+                ymax = max(global_data['m_point'][1],y)
+                if xmin==xmax or ymin==ymax:
+                    bb = None
+                    return
+                else:
+                    bb = [xmin,ymin,xmax,ymax]
+                target_box_changed = False
+                predict_box_changed = False
+                if global_data['target_box'] is not None:
+                    if pb.voc.bndboxIntersect(global_data['target_box'], bb) >0.1:
+                        global_data['target_box'] = None
+                        target_box_changed = True
+                predict_boxes = global_data['predict_boxes']
+                for i in range(len(predict_boxes)-1,-1,-1):
+                    predict_box = predict_boxes[i]
+                    if pb.voc.bndboxIntersect(predict_box, bb) >0.1:
+                        predict_boxes.pop(i)
+                        predict_box_changed = True
+                if target_box_changed or predict_box_changed:
+                    global_data['bg_with_box'] = global_data['background'].copy()
+                    global_data['img_to_show'] = global_data['bg_with_box']
+                    draw_iou_info(global_data['img_to_show'], global_data['target_box'],global_data['predict_boxes'])
+            elif event == cv2.EVENT_RBUTTONUP:
+                global_data['is_r_down'] = False
+                xmin = min(global_data['r_point'][0],x)
+                ymin = min(global_data['r_point'][1],y)
+                xmax = max(global_data['r_point'][0],x)
+                ymax = max(global_data['r_point'][1],y)
+                if xmin==xmax or ymin==ymax:
+                    bb = None
+                    return
+                else:
+                    bb = [xmin,ymin,xmax,ymax]
+                global_data['target_box'] = bb
+                global_data['bg_with_box'] = global_data['background'].copy()
+                global_data['img_to_show'] = global_data['bg_with_box']
+                draw_iou_info(global_data['img_to_show'], global_data['target_box'],global_data['predict_boxes'])
+            return
+
+        cv2.namedWindow(global_data['show_name'])
+        param = {}
+        param['global_data'] = global_data
+        cv2.setMouseCallback(global_data['show_name'],mouse_call_back, global_data)
+        while 1:
+            cv2.imshow(global_data['show_name'], global_data['img_to_show'])
+            key = cv2.waitKey(10)
+            if key==ord('q') or key==ord('Q') or key==27:
+                break
+        return
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    test_adjust_bndbox()
+    #test_adjust_bndbox()
     #test_vocEvaluator(save_folder_name)
     #test_detToXml(save_folder_name)
+    test_boxiou()
 

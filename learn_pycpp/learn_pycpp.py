@@ -2,6 +2,7 @@
 # frist install boost
 unzip boost_1_69_0.zip
 cd boost_1_69_0
+# ./bootstrap.sh --with-libraries=python --with-toolset=gcc --with-python=~/anaconda3/bin/python3 --with-python-version=3.6 --with-python-root=~/anaconda3/lib/python3
 ./bootstrap.sh --with-libraries=python --with-toolset=gcc 
 ./b2 cflags='-fPIC' cxxflags='-fPIC' --with-python include="~/anaconda3/include/python3.6m/"
 sudo ./b2 install

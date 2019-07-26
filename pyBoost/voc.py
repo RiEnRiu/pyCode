@@ -708,6 +708,19 @@ def bndboxGIou(bb1,bb2):
                         min(bb1[1],bb2[1]),\
                         max(bb1[2],bb2[2]),\
                         max(bb1[3],bb2[3])])
+
+    # if inters>0:
+    #     areaC = areaC-(areaC-uni)/2
+    # else:
+    #     ixmin = max(bb1[0], bb2[0])
+    #     iymin = max(bb1[1], bb2[1])
+    #     ixmax = min(bb1[2], bb2[2])
+    #     iymax = min(bb1[3], bb2[3])
+    #     iw = ixmax - ixmin + 1.
+    #     ih = iymax - iymin + 1.
+    #     areaC = areaC - (areaC-abs(iw*ih))/2
+
+
     return inters/uni - (areaC-uni)/areaC
 
 def gIouMatrix(bbs1,bbs2):

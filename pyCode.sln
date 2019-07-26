@@ -21,6 +21,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_tf", "learn_tf\learn_
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "test_module", "test_module\test_module.pyproj", "{D0147A38-877E-4216-A067-6289D117578D}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_pycpp", "learn_pycpp\learn_pycpp.pyproj", "{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,8 @@ Global
 		{05D946ED-279B-405B-8D34-23C95442F527}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0147A38-877E-4216-A067-6289D117578D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D0147A38-877E-4216-A067-6289D117578D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

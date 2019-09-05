@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
-
+sess = tf.Session(config=GPU_CONFIG)
 
 def draw_plot(x,y, title, label):
 
@@ -91,7 +91,7 @@ def run(h_size, stddev, sgd_steps):
     for sgd_step in sgd_steps:
         start_time = time.time()
         updates_sgd = tf.train.GradientDescentOptimizer(sgd_step).minimize(cost)
-        sess = tf.Session(config=GPU_CONFIG)
+        # sess = tf.Session(config=GPU_CONFIG)
         # init
         init = tf.initialize_all_variables()
         steps = 50
@@ -124,8 +124,9 @@ def run(h_size, stddev, sgd_steps):
     x = np.arange(steps)
     draw_plot(x, train_accs, title, label)
 
-    sess.close()             
+        
 
-if __name__=='__main__':
-    sgd_steps = [0.01, 0.02, 0.03]
-    run(128,0.1,sgd_steps)
+
+sgd_steps = [0.01, 0.02, 0.03]
+run(128,0.1,sgd_steps)
+sess.close()     

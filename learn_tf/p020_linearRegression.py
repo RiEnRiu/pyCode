@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 # config parameters
 learningRate = 0.01
@@ -48,48 +49,48 @@ opt = tf.train.GradientDescentOptimizer(learningRate).minimize(loss)
 init = tf.global_variables_initializer()
 
 # run
-with tf.Session(config=GPU_CONFIG) as sess:
-    sess.run(init)
-    # fitting the training data
-    for epoch in range(trainingEpochs):
-        for x,y in zip(trainX,trainY):
-            sess.run(opt,feed_dict={X:x,Y:y})
-        # print logs
-        if epoch%displayStep==0:
-            c = sess.run(loss, feed_dict={X:trainX,Y:trainY})
-            print('Epoch = {0:04d}    loss = {1:.9f}    W = {2:.9f}    b = {3:.9f}'.format(\
-                epoch,\
-                c,\
-                sess.run(W),\
-                sess.run(b)))
+# with tf.Session(config=GPU_CONFIG) as sess:
+sess.run(init)
+# fitting the training data
+for epoch in range(trainingEpochs):
+    for x,y in zip(trainX,trainY):
+        sess.run(opt,feed_dict={X:x,Y:y})
+    # print logs
+    if epoch%displayStep==0:
+        c = sess.run(loss, feed_dict={X:trainX,Y:trainY})
+        print('Epoch = {0:04d}    loss = {1:.9f}    W = {2:.9f}    b = {3:.9f}'.format(\
+            epoch,\
+            c,\
+            sess.run(W),\
+            sess.run(b)))
 
 
-    print('optimization done...')
-    WTrained = sess.run(W)
-    bTrained = sess.run(b)
-    trainingLoss = sess.run(loss, feed_dict={X:trainX,Y:trainY})
-    testingCost = sess.run(cost, feed_dict={X:testX,Y:testY})
-    print('Training loss = {0:.9f}, W = {1:.9f}, b = {2:.9f}'.format(\
-            trainingLoss,\
-            WTrained,\
-            bTrained)) 
-    print('Testing cost = {0:.9f}'.format(testingCost)) 
-    print('Absolute mean square loss difference = {0:0.9f}'.format(abs(trainingLoss-testingCost)))
+print('optimization done...')
+WTrained = sess.run(W)
+bTrained = sess.run(b)
+trainingLoss = sess.run(loss, feed_dict={X:trainX,Y:trainY})
+testingCost = sess.run(cost, feed_dict={X:testX,Y:testY})
+print('Training loss = {0:.9f}, W = {1:.9f}, b = {2:.9f}'.format(\
+        trainingLoss,\
+        WTrained,\
+        bTrained)) 
+print('Testing cost = {0:.9f}'.format(testingCost)) 
+print('Absolute mean square loss difference = {0:0.9f}'.format(abs(trainingLoss-testingCost)))
 
-    # display the plot
-    plt.ion()
-    plt.plot(trainX, trainY,'ro', label='Training data')
-    plt.plot(trainX, WTrained*trainX+bTrained, label='Fitted line')
-    plt.legend()
-    plt.show()
+# display the plot
+plt.ion()
+plt.plot(trainX, trainY,'ro', label='Training data')
+plt.plot(trainX, WTrained*trainX+bTrained, label='Fitted line')
+plt.legend()
+plt.show()
 
-    plt.ion()
-    plt.plot(testX, testY,'bo', label='Testing data')
-    plt.plot(testX, WTrained*testX+bTrained, label='Fitted line')
-    plt.legend()
-    plt.show()
+plt.ion()
+plt.plot(testX, testY,'bo', label='Testing data')
+plt.plot(testX, WTrained*testX+bTrained, label='Fitted line')
+plt.legend()
+plt.show()
 
-    input()
-    
+input()
+sess.close()
 
 

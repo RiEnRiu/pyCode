@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 # input data set
 xData = np.arange(100,step=0.1) # 0:0.1:100
@@ -40,18 +41,18 @@ loss = tf.reduce_sum((y-y_pred)**2/nSample)
 
 # optimizer
 opt = tf.train.AdamOptimizer().minimize(loss)
-with tf.Session(config=GPU_CONFIG) as sess:
-    sess.run(tf.global_variables_initializer())
+# with tf.Session(config=GPU_CONFIG) as sess:
+sess.run(tf.global_variables_initializer())
     
-    # gradient descent loop for 500 steps
-    for _ in range(500):
-        # random minibatch
-        indices = np.random.choice(nSample, batchSize)
-        X_batch, y_batch = xData[indices], yData[indices]
+# gradient descent loop for 500 steps
+for _ in range(500):
+    # random minibatch
+    indices = np.random.choice(nSample, batchSize)
+    X_batch, y_batch = xData[indices], yData[indices]
 
-        # gradient descent step
-        _, loss_val = sess.run([opt, loss], feed_dict={x:X_batch,y:y_batch})
-        print('loss = {0}'.format(loss_val))
+    # gradient descent step
+    _, loss_val = sess.run([opt, loss], feed_dict={x:X_batch,y:y_batch})
+    print('loss = {0}'.format(loss_val))
 
 
 
@@ -63,7 +64,7 @@ _xData = xData.reshape((-1))
 
 plt.plot(_xData, _xData*trained_W+trained_b, label='Fitted line')
 plt.show()
-
+sess.close()
 
 
 

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plts
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 # PCA by SVD
 text = ['I','like','enjoy','deep','learning','NLP','flying','.']
@@ -28,10 +29,9 @@ def pca(mat):
     s,u,v = tf.svd(less,full_matrices=True,compute_uv=True)
     s2 = s**2
     variance_ratio = s2/tf.reduce_sum(s2)
-    with tf.Session(config=GPU_CONFIG) as sess:
-        run = sess.run([variance_ratio])
+    # with tf.Session(config=GPU_CONFIG) as sess:
+    run = sess.run(variance_ratio)
     return run
 
-if __name__=='__main__':
-    print(pca(xMatrix))
-
+print(pca(xMatrix))
+sess.close()

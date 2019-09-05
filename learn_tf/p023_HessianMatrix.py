@@ -8,6 +8,7 @@ import numpy as np
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 X = tf.Variable(np.random.random_sample(),dtype=tf.float32)
 y = tf.Variable(np.random.random_sample(),dtype=tf.float32)
@@ -36,7 +37,6 @@ def hessian(func, varbles):
 
 hessian = hessian(function, [X, y])
 
-sess = tf.Session(config=GPU_CONFIG)
 sess.run(tf.initialize_all_variables())
 print(sess.run(hessian))
-
+sess.close()

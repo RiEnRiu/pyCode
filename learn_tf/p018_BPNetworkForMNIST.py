@@ -4,6 +4,9 @@
 
 import tensorflow as tf
 
+GPU_CONFIG = tf.ConfigProto()
+GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 # get mnist dataset, 60k training samples, 10k testing samples
 from tensorflow.examples.tutorials.mnist import input_data
@@ -51,7 +54,7 @@ acct_mat = tf.equal(tf.arg_max(a2,1),tf.arg_max(y,1))
 acct_ret = tf.reduce_sum(tf.cast(acct_mat,tf.float32))
 
 
-sess = tf.InteractiveSession()
+# sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
 for i in range(10000):
@@ -63,3 +66,4 @@ for i in range(10000):
               y:data.test.labels})
         print(res)
 
+sess.close()

@@ -8,10 +8,12 @@ import numpy as np
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
-x = np.array([[10.0,15.0,20.0],[0.0,1.0,5.0],[3.0,5.0,7.0]],dtype=tf.float32)
+x = np.array([[10.0,15.0,20.0],[0.0,1.0,5.0],[3.0,5.0,7.0]],dtype=np.float32)
 
 det = tf.matrix_determinant(x)
 
-with tf.Session(config=GPU_CONFIG) as sess:
-    print(sess.run(det))
+# with tf.Session(config=GPU_CONFIG) as sess:
+print(sess.run(det))
+sess.close()

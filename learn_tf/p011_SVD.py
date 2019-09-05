@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
+sess = tf.Session(config=GPU_CONFIG)
 
 # SVD: A(m,n) = U(m,r) * S(r,r) * int(V(r,n))  ???
 path = ''
@@ -25,8 +26,9 @@ xMatrix = np.array([[0,2,1,0,0,0,0,0],
 X_tensor = tf.convert_to_tensor(xMatrix,dtype=tf.float32)
 
 # tf SVD
-with tf.Session(config=GPU_CONFIG) as sess:
-    tf_S,tf_U,tf_Vh = sess.run(tf.svd(X_tensor,full_matrices=False))
+# with tf.Session(config=GPU_CONFIG) as sess:
+tf_S, tf_U, tf_Vh = sess.run(tf.svd(X_tensor, full_matrices=False))
+
 
 plt.figure('tf')
 plt.ion()
@@ -49,7 +51,7 @@ plt.show()
 input()
 
 
-
+sess.close()
 
 
 

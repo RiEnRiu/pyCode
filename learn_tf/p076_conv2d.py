@@ -7,18 +7,16 @@ import numpy as np
 
 GPU_CONFIG = tf.ConfigProto()
 GPU_CONFIG.gpu_options.allow_growth=True
-
+sess = tf.Session(config=GPU_CONFIG)
 
 
 # conv2d: whether rotate kernel? 
 def test_whether_rotate_kernel():
-    i = tf.constant([
-                     [1.0, 1.0, 1.0, 0.0, 0.0],
+    i = tf.constant([[1.0, 1.0, 1.0, 0.0, 0.0],
                      [0.0, 0.0, 1.0, 1.0, 1.0],
                      [0.0, 0.0, 1.0, 1.0, 0.0],
                      [0.0, 0.0, 1.0, 0.0, 0.0]], dtype=tf.float32)
-    k = tf.constant([
-                     [1.0, 0.0, 1.0],
+    k = tf.constant([[1.0, 0.0, 1.0],
                      [0.0, 1.0, 0.0],
                      [1.0, 0.0, 0.0]], tf.float32)
     # kernel: 
@@ -31,15 +29,15 @@ def test_whether_rotate_kernel():
 
     res = tf.nn.conv2d(image, kernel, strides=_strides, padding='VALID')
 
-    with tf.Session(config=GPU_CONFIG) as sess:
-        ri,rk,rc = sess.run([image,kernel,res])
-        print('image shape: {0}'.format(ri.shape))
-        print(np.squeeze(ri))
-        print('kernel shape: {0}'.format(rk.shape))
-        print(np.squeeze(rk))
-        print('ans shape: {0}'.format(rc.shape))
-        print(np.squeeze(rc))
-        print('conv2d: not rotate kernel.')
+    # with tf.Session(config=GPU_CONFIG) as sess:
+    ri,rk,rc = sess.run([image,kernel,res])
+    print('image shape: {0}'.format(ri.shape))
+    print(np.squeeze(ri))
+    print('kernel shape: {0}'.format(rk.shape))
+    print(np.squeeze(rk))
+    print('ans shape: {0}'.format(rc.shape))
+    print(np.squeeze(rc))
+    print('conv2d: not rotate kernel.')
 
 
 def test_strides_and_padding():
@@ -89,10 +87,9 @@ def test_strides_and_padding():
 
 
 
-
-if __name__=='__main__':
-    test_whether_rotate_kernel()
-    print('')
-    test_strides_and_padding()
-
+test_whether_rotate_kernel()
+print('')
+test_strides_and_padding()
+print('')
+sess.close()     
 

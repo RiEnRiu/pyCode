@@ -109,12 +109,17 @@ if __name__=='__main__':
     # multiprocessing
     num_process = min(args.process, int(multiprocessing.cpu_count())-1)
     num_process = min(len(multi_param),num_process)
+    import time
+    begin = time.time()
     if num_process<=1:
-        decode_one_video(multi_param[0])
+        for one_param in multi_param:
+            decode_one_video(one_param)
     else:
         pool = multiprocessing.Pool(num_process) 
         for x in pool.imap_unordered(decode_one_video, multi_param):
             pass
         pool.close()
         pool.join()
+    end = time.time()
+    print(end-begin)
         

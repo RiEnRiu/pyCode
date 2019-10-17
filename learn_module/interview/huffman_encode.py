@@ -82,8 +82,6 @@ def huffman_encode(n,k,c):
         
     return min_len_encoded, min_max_len_s
     
-
-
 if __name__=='__main__':
 
     n = 4

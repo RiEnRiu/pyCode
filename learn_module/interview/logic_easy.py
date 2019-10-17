@@ -5,17 +5,17 @@ Find out all the answers that meet the following 10 questions at the same time.
 2.The answer to the 5th question is:
 (a)c; (b)d; (c)a; (d)b; 
 3.Which of the following options has a different answer than the other three:
-(a)The 3rd; (b)The 6th; (c)The 2nd; (d)The 4th; 
+(a)3; (b)6; (c)2; (d)4; 
 4.Which of the following options has the same answer:
-(a)The 1st,5th; (b)The 2nd,7th; (c)The 1st,9th; (d)The 6th,10th; 
+(a)1,5; (b)2,7; (c)1,9; (d)6,10;
 5.Which of the following options has the same answer as this one?:
-(a)The 8th; (b)The 4th; (c)The 9th(d)The 7th; 
+(a)8; (b)4; (c)9 (d)7; 
 6.Which two questions have the same answer as the 8th question?:
-(a)The 2nd,4th; (b)The 1st,6th; (c)The 3rd,10th; (d)The 5th,9th; 
+(a)2,4; (b)1,6; (c)3,10; (d)5,9; 
 7.Which letter is the least in the correct answers to these ten questions:
 (a)c; (b)b; (c)a; (d)d; 
 8.Which of the following options has an answer that is not adjacent to the answer to the 1st question in alphabetical order:
-(a)The 7th; (b)The 5th; (c)The 2nd; (d)The 10th; 
+(a)7; (b)5; (c)2; (d)10; 
 9.It is known that "The answer to the 1st question is the same as the 6th" is contrary to "The answer to the X(st/nd/rd/th) question and the 5th". Then X is:
 (a)6; (b)10; (c)2; (d)9; 
 10.Among the correct answers to these ten questions,the maximum number of occurrences of the abcd letters subtract the minimum number is:

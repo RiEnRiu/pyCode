@@ -3,15 +3,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>927331d7-5c5e-4900-b29b-55e0b0c5c4ab</ProjectGuid>
+    <ProjectGuid>1ed4dfcc-5ed0-4b2b-ab4c-5b6a51c62e33</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>learn_pycpp.py</StartupFile>
+    <StartupFile>learn_pycy.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>learn_pycpp</Name>
-    <RootNamespace>learn_pycpp</RootNamespace>
+    <Name>learn_pycy</Name>
+    <RootNamespace>learn_pycy</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,14 +22,15 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="learn_pycpp.py" />
-    <Compile Include="py_modify_order_by_weight.py">
+    <Compile Include="learn_pycy.py" />
+    <Compile Include="setup.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="modify_order_by_weight.cpp" />
-    <Content Include="modify_order_by_weight.h" />
+    <Content Include="cy_nms.pyx">
+      <SubType>Code</SubType>
+    </Content>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

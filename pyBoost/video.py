@@ -30,6 +30,7 @@ import voc as pbvoc
 #from scipy.optimize import linear_sum_assignment
 from sklearn.utils.linear_assignment_ import linear_assignment
 from filterpy.kalman import KalmanFilter
+from color_ring import read_color_ring
 
 class KalmanBoxTracker:
     """
@@ -466,7 +467,8 @@ _colorwheel = np.array(_colorwheel_list,np.float32)
 _ncols = _colorwheel_RY + _colorwheel_YG + _colorwheel_GC \
     +_colorwheel_CB + _colorwheel_BM + _colorwheel_MR 
 
-_colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png'))
+# _colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png'))
+_colorRing = read_color_ring()
 
 #class calcOpticalFlow:
 #    def flowToColor(flow,maxmotion=0):

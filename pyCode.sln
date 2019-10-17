@@ -11,17 +11,19 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Common", "Common\Common.pyp
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tf_module", "tf_module\tf_module.pyproj", "{BE3819D1-11ED-41CC-AEF7-D8242473138D}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "interview", "interview\interview.pyproj", "{1527C12D-4B0B-4619-89CA-497D9BE52C13}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "pyBoost", "pyBoost\pyBoost.pyproj", "{90AF8C83-7309-46BC-A522-CD64A6340FC3}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tools", "tools\tools.pyproj", "{C6651947-E2A4-419F-8033-49C9E647C71A}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_tf", "learn_tf\learn_tf.pyproj", "{05D946ED-279B-405B-8D34-23C95442F527}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "test_module", "test_module\test_module.pyproj", "{D0147A38-877E-4216-A067-6289D117578D}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_pycpp", "learn_pycpp\learn_pycpp.pyproj", "{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_pycpp", "learn_module\learn_pycpp\learn_pycpp.pyproj", "{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_tf", "learn_module\learn_tf\learn_tf.pyproj", "{05D946ED-279B-405B-8D34-23C95442F527}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_pycy", "learn_module\learn_pycy\learn_pycy.pyproj", "{1ED4DFCC-5ED0-4B2B-AB4C-5B6A51C62E33}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "interview", "learn_module\interview\interview.pyproj", "{1527C12D-4B0B-4619-89CA-497D9BE52C13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,18 +39,20 @@ Global
 		{285DBE0B-8125-43B5-AD6C-31377B7738CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE3819D1-11ED-41CC-AEF7-D8242473138D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BE3819D1-11ED-41CC-AEF7-D8242473138D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6651947-E2A4-419F-8033-49C9E647C71A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6651947-E2A4-419F-8033-49C9E647C71A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05D946ED-279B-405B-8D34-23C95442F527}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05D946ED-279B-405B-8D34-23C95442F527}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0147A38-877E-4216-A067-6289D117578D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D0147A38-877E-4216-A067-6289D117578D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{927331D7-5C5E-4900-B29B-55E0B0C5C4AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05D946ED-279B-405B-8D34-23C95442F527}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05D946ED-279B-405B-8D34-23C95442F527}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ED4DFCC-5ED0-4B2B-AB4C-5B6A51C62E33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ED4DFCC-5ED0-4B2B-AB4C-5B6A51C62E33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

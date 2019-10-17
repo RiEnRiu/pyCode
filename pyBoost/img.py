@@ -800,6 +800,7 @@ if __name__=='__main__':
         import numpy as np 
         import argparse
         import os
+        from color_ring import read_color_ring
 
         global img
         global opt_bar
@@ -1287,12 +1288,12 @@ if __name__=='__main__':
         # load image to show
         img_resizer = pb.img.imResizer(pb.img.IMRESIZE_ROUNDUP,user_img_view_size)
         if(opt.img == ''):
-            img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'colorRing.png')
+            org_img = read_color_ring()
         else:
             img_path = opt.img
-        org_img = cv2.imread(img_path)
-        if org_img is None or os.path.isfile(img_path)==False:
-            sys.exit('Can\'t find file: {0}'.format(img_path))
+            org_img = cv2.imread(img_path)
+            if org_img is None or os.path.isfile(img_path)==False:
+                sys.exit('Can\'t find file: {0}'.format(img_path))
         img = img_resizer.imResize(org_img) 
 
         # show and run

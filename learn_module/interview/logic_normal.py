@@ -1,29 +1,28 @@
 '''
 Find out all the answers that meet the following 10 questions at the same time.
-1.The answer to this question is:
-(a)a; (b)b; (c)c; (d)d; 
-
 1. Which question is the first question with answer (b)?:
 (a)2; (b)3; (c)4; (d)5; (e)6
 2. Which is the only two contiguous questions with the same answer?:
 (a)2，3; (b)3，4; (c)4，5; (d)5，6; (e)6，7
-3。本问题答案和哪一个问题的答案相同？
+3. Which of the following options has the same answer as this one?:
 (a)1; (b)2; (c)4; (d)7; (e)6
-4。答案是a的问题的个数是：
+4. How many questions is with the answer (a)?：
 (a)0; (b)1; (c)2; (d)3; (e)4
-5。本问题答案和哪一个问题的答案相同？
+5. Which of the following options has the same answer as this one?:
 (a)10; (b)9; (c)8; (d)7; (e)6
-6。答案是a的问题的个数和答案是什么的问题的个数相同？
-a)b; (b)c; (c)d; (d)e; (e)以上都不是
-7。按照字母顺序，本问题的答案和下一个问题的答案相差几个字母？
-(a)4; (b)3; (c)2; (d)1; (e)0。(注：a和b相差一个字母)
-8。答案是元音字母的问题的个数是：
-(a)2; (b)3; (c)4; (d)5; (e)6。(注：a和e是元音字母)
-9。答案是辅音字母的问题的个数是：
-(a)一个质数; (b)一个阶乘数; (c)一个平方数; (d)一个立方数，(e)5的倍数
-10。本问题的答案是：
-(a)a; (b)b; (c)c; (d)d; (e)e。
+6. The sum of questions with answer (a) is equal to that with answer (X). Then X is?:
+a)b; (b)c; (c)d; (d)e; (e)None of the above
+7. In alphabetical order, the difference value between this answer and next question's answer is?:
+(a)4; (b)3; (c)2; (d)1; (e)0 (remark: the difference value between a and b differ is 1)
+8. How many questions is with the answer that is vowel?:
+(a)2; (b)3; (c)4; (d)5; (e)6 (remakr: a and e are vowels)
+9. There ara X questions with consonant answer. Then X is?
+(a)a prime number; (b)a order multiplier; (c)a square number; (d)a cubic number; (e)the multiple of 5
+10. The answer to this question is:
+(a)a; (b)b; (c)c; (d)d; (e)e
 '''
+
+import numpy as np
 
 def count(ans):
     n_abcd = {'a':0,'b':0,'c':0,'d':0,'e':0,'vowel':0,'consomant':0}
@@ -155,8 +154,23 @@ def is_true_ans(ans):
     
 
 if __name__=='__main__':
-    all_ans = [[]]
     ans_char = ['a','b','c','d','e']
+    
+    np_ans_char = np.array(ans_char)
+    num_q = 10
+    num_a = 5
+    all_ans = []
+    ans_id = [0]*num_q
+
+    for i in range(num_q):
+        all_ans
+    for i0 in range(5):
+        for i1 in range(5):
+            
+    for i in range(num_a**num_q):
+        all_ans.append(np_ans_char[ans_id])
+        
+        
     for i in range(10):
         all_ans = [x+[y] for x in all_ans for y in ans_char]
 

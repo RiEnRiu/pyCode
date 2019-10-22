@@ -1,3 +1,5 @@
+from time import time
+
 def sort_bubble(data):
     return [data[i] for i in argsort_bubble(data)]
 
@@ -98,7 +100,7 @@ def sort_bucket(data):
 
 
 
-from time import time
+
 
 
 if __name__=='__main__':

@@ -22,17 +22,15 @@ a)b; (b)c; (c)d; (d)e; (e)None of the above
 (a)a; (b)b; (c)c; (d)d; (e)e
 '''
 
-import numpy as np
-
 def count(ans):
-    n_abcd = {'a':0,'b':0,'c':0,'d':0,'e':0,'vowel':0,'consomant':0}
+    n_abcde = {'a':0,'b':0,'c':0,'d':0,'e':0,'vowel':0,'consomant':0}
     for x in ans:
-        n_abcd[x] += 1
+        n_abcde[x] += 1
         if(x=='a' or x=='e'):
-            n_abcd['vowel'] += 1
+            n_abcde['vowel'] += 1
         else:
-            n_abcd['consomant'] += 1
-    return n_abcd
+            n_abcde['consomant'] += 1
+    return n_abcde
 
 def is_true_ans(ans):
     #q1
@@ -75,13 +73,13 @@ def is_true_ans(ans):
     #q4
     if ans[3]=='a' and not(nCount['a']==0):
         return False
-    elif ans[3]=='b' and not(nCount['b']==1):
+    elif ans[3]=='b' and not(nCount['a']==1):
         return False
-    elif ans[3]=='c' and not(nCount['c']==2):
+    elif ans[3]=='c' and not(nCount['a']==2):
         return False
-    elif ans[3]=='d' and not(nCount['d']==3):
+    elif ans[3]=='d' and not(nCount['a']==3):
         return False
-    elif ans[3]=='e' and not(nCount['e']==4):
+    elif ans[3]=='e' and not(nCount['a']==4):
         return False
     #q5
     if ans[4]=='a' and not(ans[4]==ans[9]):
@@ -154,33 +152,13 @@ def is_true_ans(ans):
     
 
 if __name__=='__main__':
+    all_ans = [[]]
     ans_char = ['a','b','c','d','e']
-    
-    np_ans_char = np.array(ans_char)
-    num_q = 10
-    num_a = 5
-    all_ans = []
-    ans_id = [0]*num_q
-
-    for i in range(num_q):
-        all_ans
-    for i0 in range(5):
-        for i1 in range(5):
-            
-    for i in range(num_a**num_q):
-        all_ans.append(np_ans_char[ans_id])
-        
-        
     for i in range(10):
         all_ans = [x+[y] for x in all_ans for y in ans_char]
-
-    # print(all_ans[10086])
-    # print(count(all_ans[10086]))
-    # print(5**10)
-
+    print('begin...')
     ans_true = []
     for ans in all_ans:
         if is_true_ans(ans):
             ans_true.append(ans)
             print(ans)
-    #print(ans_true)

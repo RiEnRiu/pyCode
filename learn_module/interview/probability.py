@@ -8,7 +8,7 @@ def simulation(times=1000):
     for i in range(times):
         pre = 0
         now = 0
-        while((pre==1 and now==1) is not True):
+        while((pre==1 and now==1)==False):
             pre = now
             now = random.randint(0,1)
             sum += float(1)
@@ -69,7 +69,6 @@ def cal_real_prob():
     lim_Tn =  t13 + t23 + t33
     return lim_Tn
 
-#TODO
 def use_mean(p,n):
     #Set E(n) is the answer
     #E(n-1) is the answer of the case n-1

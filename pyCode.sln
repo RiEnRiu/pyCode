@@ -3,11 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ImageTool", "ImageTool\ImageTool.pyproj", "{8DCCD540-24DC-4E39-8FE7-3E8B97912796}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "pyFusion", "pyFusion\pyFusion.pyproj", "{BE0542F9-ABDF-470F-A2F1-0803ECE35C6F}"
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Common", "Common\Common.pyproj", "{285DBE0B-8125-43B5-AD6C-31377B7738CA}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "tf_module", "tf_module\tf_module.pyproj", "{BE3819D1-11ED-41CC-AEF7-D8242473138D}"
 EndProject
@@ -25,18 +21,16 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_pycy", "learn_module\
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "interview", "learn_module\interview\interview.pyproj", "{1527C12D-4B0B-4619-89CA-497D9BE52C13}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "learn_cmake", "learn_module\learn_cmake\learn_cmake.pyproj", "{078E6E53-89B5-44E2-B626-67EF18783F2D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8DCCD540-24DC-4E39-8FE7-3E8B97912796}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8DCCD540-24DC-4E39-8FE7-3E8B97912796}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE0542F9-ABDF-470F-A2F1-0803ECE35C6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BE0542F9-ABDF-470F-A2F1-0803ECE35C6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{285DBE0B-8125-43B5-AD6C-31377B7738CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{285DBE0B-8125-43B5-AD6C-31377B7738CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE3819D1-11ED-41CC-AEF7-D8242473138D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BE3819D1-11ED-41CC-AEF7-D8242473138D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90AF8C83-7309-46BC-A522-CD64A6340FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -53,6 +47,8 @@ Global
 		{1ED4DFCC-5ED0-4B2B-AB4C-5B6A51C62E33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1527C12D-4B0B-4619-89CA-497D9BE52C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{078E6E53-89B5-44E2-B626-67EF18783F2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{078E6E53-89B5-44E2-B626-67EF18783F2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

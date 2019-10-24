@@ -22,6 +22,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="boxMatch.py" />
+    <Compile Include="calcul_F.py" />
+    <Compile Include="save_F-v1.0.py" />
+    <Compile Include="test_capfps.py" />
     <Compile Include="test_module.py" />
   </ItemGroup>
   <PropertyGroup>

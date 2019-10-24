@@ -35,6 +35,9 @@
     <Compile Include="record.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="move.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="resizeImg.py" />
     <Compile Include="splitVoc.py">
       <SubType>Code</SubType>

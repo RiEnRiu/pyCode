@@ -1,0 +1,17 @@
+﻿#获取当前目录所有源文件，存在DIR_SRCS变量中
+AUX_SOURCE_DIRECTORY(. DIR_SRCS_aug_solver)
+
+ADD_SUBDIRECTORY(mask_maker)
+
+#编译为静态库
+ADD_LIBRARY (aug_solver ${DIR_SRCS_aug_solver})
+
+#设置链接
+#TARGET_LINK_LIBRARIES(aug_solver ${LIB_BOOST_FILESYSTEM})
+#TARGET_LINK_LIBRARIES(aug_solver ${LIB_OPENCV_CORE})
+#TARGET_LINK_LIBRARIES(aug_solver ${LIB_OPENCV_IMGPROC})
+#TARGET_LINK_LIBRARIES(aug_solver ${LIB_OPENCV_IMGCODECS})
+#TARGET_LINK_LIBRARIES(aug_solver ${LIB_OPENCV_HIGHGUI})
+TARGET_LINK_LIBRARIES(aug_solver stl_expand)
+TARGET_LINK_LIBRARIES(aug_solver mask_maker)
+

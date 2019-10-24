@@ -32,6 +32,7 @@
     <Compile Include="huffman_encode.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="imbalance.py" />
     <Compile Include="logic_easy.py">
       <SubType>Code</SubType>
     </Compile>

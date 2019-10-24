@@ -7,14 +7,6 @@ copy .\README.md .\ubuntu
 copy .\TODO.txt .\ubuntu
 copy .\test_capfps.py .\ubuntu
 
-::project Common
-mkdir .\ubuntu\Common
-copy .\Common\*.py .\ubuntu\Common
-
-::project ImageTool
-mkdir .\ubuntu\ImageTool
-copy .\ImageTool\*.py .\ubuntu\ImageTool
-
 ::learn_module
 mkdir .\ubuntu\learn_module
 

@@ -1,0 +1,12 @@
+﻿#获取当前目录所有源文件，存在DIR_SRCS变量中
+AUX_SOURCE_DIRECTORY(. DIR_SRCS_mask_maker)
+
+#编译为静态库
+ADD_LIBRARY (mask_maker ${DIR_SRCS_mask_maker})
+
+#设置链接
+TARGET_LINK_LIBRARIES(mask_maker ${LIB_BOOST_PROGRAM_OPTIONS})
+TARGET_LINK_LIBRARIES(mask_maker ${LIB_OPENCV_CORE})
+TARGET_LINK_LIBRARIES(mask_maker ${LIB_OPENCV_IMGPROC})
+TARGET_LINK_LIBRARIES(mask_maker ${LIB_OPENCV_HIGHGUI})
+TARGET_LINK_LIBRARIES(mask_maker stl_expand)

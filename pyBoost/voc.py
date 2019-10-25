@@ -150,13 +150,17 @@ def xml_read(path):
     if p_xml_verified is not None:
         out.verified = p_xml_verified
 
-    out.segmented = int(xml_root.find('segmented').text)
+    p_xml_segmented = xml_root.find('segmented')
+    if p_xml_segmented is not None:
+        out.segmented = int(p_xml_segmented.text)
 
     p_xml_element = xml_root.find('folder')
     if p_xml_element is not None and p_xml_element.text is not None:
         out.folder = p_xml_element.text
 
-    out.filename = xml_root.find('filename').text
+    p_xml_filename = xml_root.find('filename')
+    if p_xml_filename is not None:
+        out.filename = p_xml_filename.text
 
     p_xml_element = xml_root.find('path')
     if p_xml_element is not None and p_xml_element.text is not None:

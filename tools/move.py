@@ -160,7 +160,7 @@ if __name__=='__main__':
     try:
         args.format.format(1)
     except Exception as e:
-        sys.exit('-f,--format, please use \"\"')
+        sys.exit('-f,--format, name format, please use \"\", \"PATH/format\"(copy) or \"format\"(cover).')
     if args.voc=='NOT_MENTIONED':
         print('Move files in: {0}'.format(args.dir))
         print('Save in: {0}'.format(os.path.join(args.dir,'{0}.*'.format(args.format))))

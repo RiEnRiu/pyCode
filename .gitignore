@@ -60,3 +60,7 @@ tools/4c66af3e175107ed5f53715d7fb25eab*
 learn_module/learn_pycpp/modify_order_by_weight.pyd
 learn_module/learn_cmake/build/*
 learn_module/learn_cmake/test/*
+learn_module/interview/np_conv/params/*
+learn_module/interview/np_conv/data/*
+learn_module/interview/np_conv/venv/*
+learn_module/learn_tf/MNIST_data/*

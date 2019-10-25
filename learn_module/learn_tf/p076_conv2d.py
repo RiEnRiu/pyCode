@@ -84,6 +84,34 @@ def test_strides_and_padding():
         print('    2. find the value according to the strides')
   
 
+def train_mnist():
+    batch_size = 50
+    learning_rate = 0.01
+    input = tf.placeholder(tf.float32,[batch_size,28,28,1])
+    label = tf.placeholder(tf.float32,[batch_size,10])
+    ker1 = tf.random_uniform([1, 5, 5, 12],tf.float32)
+    bias1 = tf.zeros((12,1,1,1),tf.float32)
+    conv1 = tf.nn.conv2d(input, ker1)
+    relu1 = tf.nn.relu(conv1+bias1)
+    pool1 = tf.nn.max_pool(relu1,(1,2,2,1),strides=(1,2,2,1))
+    ker2 = tf.random_uniform([12, 5, 5, 20],tf.float32)
+    bias2 = tf.zeros((20,1,1,1),tf.float32)
+    conv2 = tf.nn.conv2d(pool1, ker2)
+    relu2 = tf.nn.relu(conv2+bias2)
+    pool2 = tf.nn.max_pool(relu2,(1,2,2,1),strides=(1,2,2,1)).reshape(batch_size,-1)
+    wfc1 = tf.random_uniform([pool2.shape[0],pool2.shape[1],100],tf.float32)
+    bfc1 = tf.zeros(wfc1.shape,tf.float32)
+    fc1 = pool2*wfc1+bfc1
+    relu3 = tf.nn.relu(fc1)
+    wfc2 = tf.random_uniform([relu3.shape[0],relu3.shape[1],10],tf.float32)
+    bfc2 = tf.zeros(wfc2.shape,tf.float32)
+    fc2 = relu3*wfc2+bfc2
+    softmaxloss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=label,logits=fc2)
+    step = tf.train.GradientDescentOptimizer(learning_rate).minimize(softmaxloss)
+    for i in range(1000):
+        
+    
+
 
 
 

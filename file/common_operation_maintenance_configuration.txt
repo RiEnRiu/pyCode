@@ -1,0 +1,44 @@
+[ssh]
+
+sudo apt-get update
+sudo apt-get install openssh-server
+/etc/init.d/ssh start
+sudo vim /etc/ssh/sshd_config
+   port=60000
+sudo /etc/init.d/ssh resart
+
+
+[ftp]
+sudo apt-get update
+sudo apt-get install vsftpd
+sudo vim /etc/vsftpd.conf
+   write_enable=YES
+sudo /etc/init.d/vsftpd restart
+
+
+
+[ip]
+ifconfig                            # find network cards name such as ens33
+sudo  vim /etc/network/interfaces
+   auto ens33
+   iface en33 inet static           # static ip
+   address 192.168.0.89
+   netmask 255.255.255.0
+   gateway 192.168.0.1
+sudo vim /etc/resolvconf/resolv.conf.d/head
+   nameserver 192.168.0.1
+   nameserver 8.8.8.8
+sudo /etc/init.d/networking restart
+
+
+
+[self-running when switch on]
+sudo vim /etc/rc.local
+   bash xxx
+
+
+[self-running when terminal on]
+sudo vim $HOME/.bashrc
+    bash xxx
+
+

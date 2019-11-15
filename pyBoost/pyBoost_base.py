@@ -5,6 +5,7 @@ import threading
 import time
 import queue
 import datetime
+import numpy as np
 
 
 
@@ -232,17 +233,12 @@ def makedirs(path):
     return
 
 def get_time_stamp(start='year',end='second'):
-    datatime_str = str(datetime.datetime.now())
-    #  0123456789
-    #            0123456789      
-    #                      012345
-    # '2019-04-19 10:57:37.826145'
-    dd = '{0}_{1}-{2}-{3}-{4}'.format(\
-                    datatime_str[:10],\
-                    datatime_str[11:13],\
-                    datatime_str[14:16],\
-                    datatime_str[17:19],\
-                    datatime_str[20:])
+    dd = str(datetime.datetime.now())
+    #               1         2     
+    #     01234567890123456789012345
+    #    '2019-04-19 10:57:37.826145'
+    # to '2019-04-19_10-57-37-826145'
+    dd = dd.replace(':','-').replace('.','-').replace(' ','_')
     i0 = 0
     i1 = 26
     if start=='year': i0 = 0
@@ -414,6 +410,36 @@ class productionLine:
 
     def full(self):
         return self._q_list[self._num_workers].full()
+
+def str_table(table):
+    try:
+        rows = len(table)
+        cols = len(table[0])
+        r = [[str(table[i][j]) for j in range(cols)] for i in range(rows)]
+    except Exception as e:
+        raise ValueError('Invalid table.')
+    if rows==0 or cols==0:
+        raise ValueError('Invalid table.')
+    max_len = np.array([[len(y) for y in x] for x in r], np.int32)
+    max_len = max_len.max(0)
+    dividing_line = ['-'*(n+2) for n in max_len]
+    dividing_line = '+{0}+'.format('+'.join(dividing_line))
+    data = []
+    for x in r:
+        tmp = []
+        for n,y in zip(max_len,x):
+            tmp.append(y.center(n+2))
+        data.append('|{0}|'.format('|'.join(tmp)))
+    rtable = []
+    rtable.append(dividing_line)
+    rtable.append(data[0])
+    rtable.append(dividing_line)
+    rtable.extend(data[1:])
+    rtable.append(dividing_line)
+    return '\n'.join(rtable)
+
+def print_table(table):
+    print(str_table(table))
 
 if __name__=='__main__':
     ##################################################################

@@ -1,10 +1,7 @@
+#-*-coding:utf-8-*-
 import threading
 import time
 import queue
-
-
-
-
 
 class productionLineWorker:
     def __init__(self, func, key, pre_workers_keys=None, next_workers_keys=None, maxsize=0, flow_type = 'FIFO', refresh_HZ = 1000):

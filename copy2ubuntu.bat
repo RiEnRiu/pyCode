@@ -5,7 +5,10 @@ rmdir /s/q ubuntu
 mkdir .\ubuntu
 copy .\README.md .\ubuntu 
 copy .\TODO.txt .\ubuntu
-copy .\test_capfps.py .\ubuntu
+
+::file
+mkdir .\ubuntu\file
+copy .\file\* .\ubuntu\file
 
 ::learn_module
 mkdir .\ubuntu\learn_module
@@ -21,18 +24,22 @@ copy .\learn_module\learn_pycpp\*.py .\ubuntu\learn_module\learn_pycpp
 copy .\learn_module\learn_pycpp\*.h .\ubuntu\learn_module\learn_pycpp
 copy .\learn_module\learn_pycpp\*.cpp .\ubuntu\learn_module\learn_pycpp
 
+::project learn_module\learn_pycy
+mkdir .\ubuntu\learn_module\learn_pycy
+copy .\learn_module\learn_pycy\*.pyx .\ubuntu\learn_module\learn_pycy
+copy .\learn_module\learn_pycy\*.py .\ubuntu\learn_module\learn_pycy
+
 ::project learn_module\learn_tf
 mkdir .\ubuntu\learn_module\learn_tf
 copy .\learn_module\learn_tf\*.py .\ubuntu\learn_module\learn_tf
 
 ::project learn_module\REFERENCE
 mkdir .\ubuntu\learn_module\REFERENCE
-copy .\learn_module\REFERENCE\*.py .\ubuntu\learn_module\REFERENCE
+copy .\learn_module\REFERENCE\* .\ubuntu\learn_module\REFERENCE
 
 ::project pyBoost
 mkdir .\ubuntu\pyBoost
 copy .\pyBoost\*.py .\ubuntu\pyBoost
-copy .\pyBoost\colorRing.png .\ubuntu\pyBoost
 
 ::project pyFusion
 mkdir .\ubuntu\pyFusion
@@ -53,7 +60,7 @@ mkdir .\ubuntu\tools
 copy .\tools\*.py .\ubuntu\tools
 
 ::copy to ubuntu
-::xcopy /E/Y .\ubuntu X:\
+xcopy /E/Y .\ubuntu X:\
 
 pause
 

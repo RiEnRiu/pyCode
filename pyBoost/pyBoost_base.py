@@ -6,7 +6,8 @@ import time
 import queue
 import datetime
 import numpy as np
-
+import json
+import pickle
 
 
 def scan_folder(scanned_dir):
@@ -440,6 +441,32 @@ def str_table(table):
 
 def print_table(table):
     print(str_table(table))
+
+def load_json_path(jpath,**kwargs):
+    fp = open(jpath,'r')
+    r = json.load(fp,**kwargs)
+    fp.close()
+    return r
+
+def dump_json_path(obj,jpath,indent=4,sort_keys=True,**kwargs):
+    fp = open(jpath,'w')
+    json.dump(obj,fp,indent=indent,sort_keys=sort_keys,**kwargs)
+    fp.close()
+    return
+
+def load_pkl_path(ppath,**kwargs):
+    fp = open(ppath,'rb')
+    r = pickle.load(fp,**kwargs)
+    fp.close()
+    return r
+
+def dump_pkl_path(obj,pjpath,**kwargs):
+    fp = open(pjpath,'wb')
+    pickle.dump(obj,fp,**kwargs)
+    fp.close()
+    return
+
+
 
 if __name__=='__main__':
     ##################################################################

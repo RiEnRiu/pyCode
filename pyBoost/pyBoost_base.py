@@ -107,23 +107,66 @@ def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
     if os.path.isdir(scanned_dir) == False:
         raise ValueError('It is not valid path: '+scanned_dir)
         return []
-    exts_set = __get_exts_set(exts)    
+    exts_set = __get_exts_set(exts)   
 
-    files_path = []
-    __do_deep_scan_file(scanned_dir,files_path, with_root_dir)
-
+    files_name, files_full_path = [], []
+    folder_to_scan = set()
+    folder_to_scan.add('')
+    while len(folder_to_scan)!=0:
+        folder = folder_to_scan.pop()
+        contents = [os.path.join(folder,x) for x in os.listdir(os.path.join(scanned_dir,folder))]
+        contents_full_path = [os.path.join(scanned_dir,x) for x in contents]
+        for c, cf in zip(contents,contents_full_path):
+            if os.path.isfile(cf):
+                files_name.append(c)
+                files_full_path.append(cf)
+            else: # elif os.path.isdir(cf):
+                folder_to_scan.add(c)
+   
     if exts_set is None:
-        return 
-        if with_ext==True:
-            return files_path
-        else:
-            return [splitext(x)[0] for x in files_path]
+        if with_root_dir==True and with_ext==True:
+            return files_full_path
+        elif with_root_dir==False and with_ext==True:
+            return files_name
+        elif with_root_dir==True and with_ext==False:
+            return [splitext(x)[0] for x in files_full_path]
+        else:# elif with_root_dir==False and with_ext==False:
+            return [splitext(x)[0] for x in files_name]
     else:
-        sp_file = [splitext(x) for x in files_path]
-        if with_ext==True:
-            return [x for x in files_path if splitext(x)[1] in exts_set]
-        else:
+        if with_root_dir==True and with_ext==True:
+            return [x for x in files_full_path if splitext(x)[1] in exts_set]
+        elif with_root_dir==False and with_ext==True:
+            return [x for x in files_name if splitext(x)[1] in exts_set]
+        elif with_root_dir==True and with_ext==False:
+            sp_file = [splitext(x) for x in files_full_path]
             return [front for front,ext in sp_file if ext in exts_set]
+        else:# elif with_root_dir==False and with_ext==False:
+            sp_file = [splitext(x) for x in files_name]
+            return [front for front,ext in sp_file if ext in exts_set]
+
+
+
+#def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
+#    if os.path.isdir(scanned_dir) == False:
+#        raise ValueError('It is not valid path: '+scanned_dir)
+#        return []
+#    exts_set = __get_exts_set(exts)    
+
+#    files_path = []
+#    __do_deep_scan_file(scanned_dir,files_path, with_root_dir)
+
+#    if exts_set is None:
+#        return 
+#        if with_ext==True:
+#            return files_path
+#        else:
+#            return [splitext(x)[0] for x in files_path]
+#    else:
+#        sp_file = [splitext(x) for x in files_path]
+#        if with_ext==True:
+#            return [x for x in files_path if splitext(x)[1] in exts_set]
+#        else:
+#            return [front for front,ext in sp_file if ext in exts_set]
 
 def scan_pair(scanned_dir1,scanned_dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     if exts1 is None or exts2 is None:
@@ -439,8 +482,14 @@ def str_table(table):
     rtable.append(dividing_line)
     return '\n'.join(rtable)
 
-def print_table(table):
-    print(str_table(table))
+def print_table(table,add_first=False):
+    if add_first and len(table)>0 and len(table[0])>0:            
+        ntable = [[''] + ['col_{}'.format(i) for i,x in enumerate(table[0])]]
+        for i,x in enumerate(table):
+            ntable.append(['row_{}'.format(i)]+list(x))
+        print(str_table(ntable))
+    else:
+        print(str_table(table))
 
 def load_json_path(jpath,**kwargs):
     fp = open(jpath,'r')
@@ -493,7 +542,7 @@ if __name__=='__main__':
         print('scanner_file(\'.txt\') = ')
         print(scanner_file_txt)
         print()
-        scanner_file_r_img_full = pb.scan_file_r(path_to_scanner,'.jpg.png.jpeg')
+        scanner_file_r_img_full = pb.deep_scan_file(path_to_scanner,'.jpg.png.jpeg')
         print('scanner_file_r_img_full[0:5] = ')
         print(scanner_file_r_img_full[0:5])
         print()
@@ -519,6 +568,39 @@ if __name__=='__main__':
                 print('fps = {:.6f}, {:.6f}'.format(p_fps.get(5),1/(time.time()-begin)))
         return    
 
+    def test_dump_load(dir):
+        time_stamp = get_time_stamp()
+        test_dict = {'time_stamp':time_stamp,'mode':'test','key':2333}
+        save_path = os.path.join(dir,'dump_load')
+        pb.makedirs(save_path)
+        print('source content = ')
+        print(test_dict)
+
+        pb.dump_json_path(test_dict,os.path.join(save_path,'test.json'))
+        jload = pb.load_json_path(os.path.join(save_path,'test.json'))
+        print('json file content = ')
+        with open(os.path.join(save_path,'test.json'),'r') as fp:
+            print(''.join(fp.readlines()))
+        print('json reloaded content = ')
+        print(jload)
+
+        pb.dump_pkl_path(test_dict,os.path.join(save_path,'test.pkl'))
+        pload = pb.load_pkl_path(os.path.join(save_path,'test.pkl'))
+        print('pkl reloaded content = ')
+        print(pload)
+
+        
+    def test_print_table():
+        import cv2
+        color_ring = pb.read_color_ring()
+        gray = cv2.cvtColor(color_ring,cv2.COLOR_BGR2GRAY)
+        img = cv2.resize(gray,(5,5))
+        print('source table:')
+        print(img)
+        print('print table:')
+        pb.print_table(img)
+        print('print added first table')
+        pb.print_table(img, add_first=True)
 
 
     def test_productionLine():
@@ -579,8 +661,10 @@ if __name__=='__main__':
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    test_get_time_stemp()
+    #test_get_time_stemp()
     # test_scan()
+    # test_dump_load(save_folder_name)
+    test_print_table()
     #test_FPS()
     #test_productionLine()
 

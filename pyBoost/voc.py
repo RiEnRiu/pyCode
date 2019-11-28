@@ -37,7 +37,6 @@ from scipy.optimize import linear_sum_assignment
 
 
 
-
 class bndbox():
     def __init__(self, _xmin, _ymin, _xmax, _ymax):
         if _xmax + 1 <_xmin or _ymax + 1< _ymin:

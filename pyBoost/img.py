@@ -7,8 +7,7 @@ import random
 import time
 
 #Rotate
-def __rotate_one(img,angle):
-    is_1c = len(img.shape) == 2
+def __rotate_one(img, angle):
     diagonal = int(math.sqrt(img.shape[0]*img.shape[0]+img.shape[1]*img.shape[1])) + 1
     bg_shape = list(img.shape)
     bg_shape[0] = diagonal
@@ -18,13 +17,9 @@ def __rotate_one(img,angle):
     bg_roi_y1 = int((diagonal-img.shape[0])/2)
     bg_roi_x2 = bg_roi_x1+img.shape[1]
     bg_roi_y2 = bg_roi_y1+img.shape[0]
-    if is_1c:
-        bg[bg_roi_y1:bg_roi_y2,bg_roi_x1:bg_roi_x2] = img
-    else:
-        bg[bg_roi_y1:bg_roi_y2,bg_roi_x1:bg_roi_x2,:] = img
+    bg[bg_roi_y1:bg_roi_y2,bg_roi_x1:bg_roi_x2] = img
     r = cv2.getRotationMatrix2D((diagonal/2,diagonal/2),angle,1.0)
     rot_output = cv2.warpAffine(bg,r,(bg.shape[1],bg.shape[0]))
-       
     c = math.fabs(math.cos(angle/180*math.pi))
     s = math.fabs(math.sin(angle/180*math.pi))
     true_w = int(img.shape[1] * c + img.shape[0]*s)
@@ -33,274 +28,205 @@ def __rotate_one(img,angle):
     rot_output_roi_y1 = int((diagonal-true_h)/2)
     rot_output_roi_x2 = rot_output_roi_x1+true_w
     rot_output_roi_y2 = rot_output_roi_y1+true_h
-
-    if is_1c:
-        return rot_output[rot_output_roi_y1:rot_output_roi_y2,rot_output_roi_x1:rot_output_roi_x2]
-    else:
-        return rot_output[rot_output_roi_y1:rot_output_roi_y2,rot_output_roi_x1:rot_output_roi_x2,:]
+    return rot_output[rot_output_roi_y1:rot_output_roi_y2,rot_output_roi_x1:rot_output_roi_x2]
 
 def rotate(img,*angles):
     len_angles = len(angles)
     if len_angles==0:
         raise ValueError('There must be at least 1 in \"angles\"')
-        return None
-    output = []
-    for angle in angles:
-        output.append(__rotate_one(img,angle))
     if len_angles == 1:
-        return output[0]
+        return __rotate_one(img,angles[0])
     else:
-        return output
+        return [__rotate_one(img,a) for a in angles]
            
 #Flip
 def flipUD(img):
     return cv2.flip(img,0)
 def flipLR(img):
     return cv2.flip(img,1)
-def flip(img):
-    return cv2.flip(img,random.randint(0,1))
+#def flip(img):
+#    return cv2.flip(img,random.randint(0,1))
     
 #Crop
 def __crop_one(img,rate):
     img_shape = img.shape
     is_1c = len(img.shape) == 2
     if rate>1:
-        rate = 1.0
-    if rate<0:
-        rate = 0.0
-        
-    max_shape = [img_shape[0] * (1.0-rate)-1.0,img_shape[1] * (1.0-rate)-1.0]
-    if max_shape[0]<=0 or max_shape[1]<=0:
-        return img.copy()
-    x1 = random.randint(0,int(max_shape[1]))
-    y1 = random.randint(0,int(max_shape[0]))
-    x2 = x1+ int(img_shape[1]*rate)
-    y2 = y1+ int(img_shape[0]*rate)
-    if is_1c:
-        return img[y1:y2,x1:x2].copy()
-    else:
-        return img[y1:y2,x1:x2,:].copy()
+        raise ValueError('rate > 1')
+    elif rate<=0:
+        raise ValueError('rate <= 0')
+    ih,iw = img_shape[0], img_shape[1]
+    h,w = ih*(1.0-rate)-1.0, iw*(1.0-rate)-1.0
+    if w<=0 or h<=0:
+        raise ValueError('crop image({0},{1}) into {2}% will be None'.format(img.shape[1],img.shape[0],rate*100))
+    x1 = random.randint(0,int(w))
+    y1 = random.randint(0,int(h))
+    x2 = x1+ int(iw*rate)
+    y2 = y1+ int(ih*rate)
+    return img[y1:y2,x1:x2].copy()
 
 def crop(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__crop_one(img,rate))
     if len_rates == 1:
-        return output[0]
+        return __crop_one(img,rates[0])
     else:
-        return output
+        return [__crop_one(img,r) for r in rates]
 
 #Affine
-def __affine_one(img,is_X,rate):
-    img_cols = img.shape[1]
-    img_rows = img.shape[0]
-    src = np.array([[0.0,0.0],[img_cols,0.0],[0.0,img_rows]],np.float32)
-    if is_X:
-        if rate<0:
-            offset_x = int(-rate * img_cols)
-            dist = np.array([[src[0][0]+offset_x,src[0][1]],\
-            [src[1][0]+offset_x,src[1][1]],[src[2][0],src[2][1]]],\
-            np.float32)
-            r = cv2.getAffineTransform(src,dist)
-            output = cv2.warpAffine(img,r,(img_cols+offset_x,img_rows))
-        else:
-            offset_x = int(rate * img_cols)
-            dist = np.array([[src[0][0],src[0][1]],\
-            [src[1][0],src[1][1]],[src[2][0]+offset_x,src[2][1]]],\
-            np.float32)
-            r = cv2.getAffineTransform(src,dist)
-            output = cv2.warpAffine(img,r,(img_cols+offset_x,img_rows))
+def __affineX_one(img, rate):
+    ih,iw = img.shape[0], img.shape[1]
+    src = np.array([[0.0,0.0],[iw,0.0],[0.0,ih]],np.float32)
+    dist = src.copy()
+    offset_x = abs(rate * iw)
+    if rate>0:
+        dist[0,0] += offset_x
+        dist[1,0] += offset_x
     else:
-        if rate<0:
-            offset_y = int(-rate * img_rows)
-            dist = np.array([[src[0][0],src[0][1]+offset_y],\
-            [src[1][0],src[1][1]],[src[2][0],src[2][1]+offset_y]],\
-            np.float32)
-            r = cv2.getAffineTransform(src,dist)
-            output = cv2.warpAffine(img,r,(img_cols,img_rows+offset_y))
-        else:
-            offset_y = int(rate * img_rows)
-            dist = np.array([[src[0][0],src[0][1]],\
-            [src[1][0],src[1][1]+offset_y],[src[2][0],src[2][1]]],\
-            np.float32)
-            r = cv2.getAffineTransform(src,dist)
-            output = cv2.warpAffine(img,r,(img_cols,img_rows+offset_y))
-    return output
+        dist[2,0] += offset_x
+    r = cv2.getAffineTransform(src,dist)
+    return cv2.warpAffine(img,r,(iw+int(offset_x),ih))
 
-def affine(img,*rates):
-    len_rates = len(rates)
-    if len_rates==0:
-        raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__affine_one(img,random.randint(0,1),rate))
-    if len_rates == 1:
-        return output[0]
+
+def __affineY_one(img, rate):
+    ih,iw = img.shape[0], img.shape[1]
+    src = np.array([[0.0,0.0],[iw,0.0],[0.0,ih]],np.float32)
+    offset_y = abs(rate * ih)
+    dist = src.copy()
+    if rate>0:
+        dist[1,1] += offset_y
     else:
-        return output
+        dist[0,1] += offset_y
+        dist[2,1] += offset_y
+    r = cv2.getAffineTransform(src,dist)
+    return cv2.warpAffine(img,r,(iw,ih+int(offset_y)))
       
 def affineX(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__affine_one(img,True,rate))
     if len_rates == 1:
-        return output[0]
+        return __affineX_one(img,rates[0])
     else:
-        return output
+        return [__affineX_one(img,r) for r in rates]
 
         
 def affineY(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__affine_one(img,False,rate))
     if len_rates == 1:
-        return output[0]
+        return __affineY_one(img,rates[0])
     else:
-        return output
+        return [__affineY_one(img,r) for r in rates]
 
 #Noise
-def __add_noise_one(img,rate,is_4c):
-    if is_4c is not True:
-        noise = np.random.randint(-255,255,img.size)
-        f_noise = noise.reshape(img.shape).astype(np.float32)
-        added_noise = (f_noise*rate+img)
-        added_noise[added_noise>255]=255
-        added_noise[added_noise<0]=0
-        return added_noise.astype(img.dtype)
-    else:
-        noise = np.random.randint(-255,255,(img.shape[0],img.shape[1],3))
-        f_noise = noise.reshape((img.shape[0],img.shape[1],3)).astype(np.float32)
-        added_noise = img.copy()
-        added_noise[:,:,0:3] = (f_noise*rate+img[:,:,0:3]).astype(np.uint8)
-        added_noise[added_noise>255]=255
-        added_noise[added_noise<0]=0
-        return added_noise
+def __add_noise_one(img,rate):
+    noise = np.random.randint(-255,255,img.shape)
+    added_noise = img.astype(np.float32)
+    added_noise[:] += noise*rate
+    added_noise[added_noise>255]=255
+    added_noise[added_noise<0]=0
+    added_noise = added_noise.astype(img.dtype)
+    return added_noise
 
 def add_noise(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    is_4c = len(img.shape) == 3
-    if is_4c:
-        is_4c = img.shape[2] == 4
-    output = []
-    for rate in rates:
-        output.append(__add_noise_one(img,rate,is_4c))
-    if len_rates == 1:
-        return output[0]
+    if len_rates == 1 and len(img.shape)==3 and img.shape[0]==4:
+        rimg = np.empty(img.shape, dtype=img.dtype)
+        rimg[:,:,0:3] = __add_noise_one(img[:,:,0:3],rates[0])
+        rimg[:,:,3] = img[:,:3]
+        return rimg
+    elif len_rates != 1 and len(img.shape)==3 and img.shape[0]==4:
+        rimgs = [np.empty(img.shape, dtype=img.dtype) for r in rates]
+        for rimg,rate in zip(rimgs,rates):
+            rimg[:,:,0:3] = __add_noise_one(img[:,:,0:3],rate)
+            rimg[:,:,3] = img[:,:3]
+        return rimgs
+    elif len_rates == 1 and (len(img.shape)!=3 or (img.shape[0]!=4)):
+        return __add_noise_one(img,rates[0])
     else:
-        return output
+        return [__add_noise_one(img,r) for r in rates]
 
 #Hue
 def adjust_hue(img,*anlges):
     len_anlges = len(anlges)
     if len_anlges==0:
         raise ValueError('There must be at least 1 in \"anlges\"')
-        return None
-
-    is_4c = img.shape[2] == 4
-    if is_4c:
-        bgr = img[:,:,0:3]
-        one_output = np.zeros(img.shape,img.dtype)
-        one_output[:,:,3] = img[:,:,3]
-    else:
-        bgr = img
-        one_output = np.zeros(img.shape,img.dtype)
-        
+    bgr = img[:,:,0:3]
     hls = cv2.cvtColor(bgr,cv2.COLOR_BGR2HLS)
-        
-    output = []
+    tmp_hls = hls.copy()
+    bgrs = []
     for anlge in anlges:
-        temp_hls = hls.copy()
-        f_temp_h = temp_hls[:,:,0]*2.0+anlge
-        f_temp_h[f_temp_h>360] = f_temp_h[f_temp_h>360]-360
-        f_temp_h[f_temp_h<0] = f_temp_h[f_temp_h<0]+360
-        f_temp_h /=2.0
-        temp_hls[:,:,0] = f_temp_h
-        one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
-        output.append(one_output)
-
-    if len_anlges==1:
-        return output[0]
+        tmp_h = hls[:,:,0]*2.0+anlge
+        tmp_h -= tmp_h//360*360
+        tmp_hls[:,:,0] = tmp_h
+        tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
+        bgrs.append(tmp_bgr)
+    if len_anlges==1 and img.shape[2] >= 4:
+        return np.concatenate((bgrs[0],img[:,:,3:]),axis=2)
+    elif len_anlges!=1 and img.shape[2] >= 4:
+        a = img[:,:,3:4]
+        return [np.concatenate(x,a,axis=2) for x in bgrs]
+    elif len_anlges==1 and img.shape[2] < 4:
+        return bgrs[0]
     else:
-        return output
-
+        return bgrs
+  
 #Lightness
 def adjust_lightness(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    is_4c = img.shape[2] == 4
-    if is_4c:
-        bgr = img[:,:,0:3]
-        one_output = np.zeros(img.shape,img.dtype)
-        one_output[:,:,3] = img[:,:,3]
-    else:
-        bgr = img
-        one_output = np.zeros(img.shape,img.dtype)
-        
+    bgr = img[:,:,0:3]
     hls = cv2.cvtColor(bgr,cv2.COLOR_BGR2HLS)
-    output = []
+    tmp_hls = hls.copy()
+    bgrs = []
     for rate in rates:
-        temp_hls = hls.copy()
-        f_temp_l = temp_hls[:,:,1]/255.0+rate
-        f_temp_l[f_temp_l>1] = 1.0
-        f_temp_l[f_temp_l<0] = 0.0
-        temp_hls[:,:,1] = f_temp_l*255.0
-        one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
-        output.append(one_output)
-
-    if len_rates==1:
-        return output[0]
+        tmp_l = hls[:,:,1]/255.0+rate
+        tmp_l = np.maximum(tmp_l,0.0)
+        tmp_l = np.minimum(tmp_l,1.0)
+        tmp_hls[:,:,1] = tmp_l*255.0
+        tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
+        bgrs.append(tmp_bgr)
+    if len_anlges==1 and img.shape[2] >= 4:
+        return np.concatenate((bgrs[0],img[:,:,3:]),axis=2)
+    elif len_anlges!=1 and img.shape[2] >= 4:
+        a = img[:,:,3:4]
+        return [np.concatenate(x,a,axis=2) for x in bgrs]
+    elif len_anlges==1 and img.shape[2] < 4:
+        return bgrs[0]
     else:
-        return output
+        return bgrs
 
 #Saturation
 def adjust_saturation(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    is_4c = img.shape[2] == 4
-    if is_4c:
-        bgr = img[:,:,0:3]
-        one_output = np.zeros(img.shape,img.dtype)
-        one_output[:,:,3] = img[:,:,3]
-    else:
-        bgr = img
-        one_output = np.zeros(img.shape,img.dtype)
-        
+    bgr = img[:,:,0:3]
     hls = cv2.cvtColor(bgr,cv2.COLOR_BGR2HLS)
-        
-    output = []
+    tmp_hls = hls.copy()
+    bgrs = []
     for rate in rates:
-        temp_hls = hls.copy()
-        f_temp_s = temp_hls[:,:,2]/255.0+rate
-        f_temp_s[f_temp_s>1] = 1.0
-        f_temp_s[f_temp_s<0] = 0.0
-        temp_hls[:,:,2] = f_temp_s*255.0
-        one_output[:,:,0:3] = cv2.cvtColor(temp_hls,cv2.COLOR_HLS2BGR)
-        output.append(one_output.copy())
-
-    if len_rates==1:
-        return output[0]
+        tmp_s = hls[:,:,2]/255.0+rate
+        tmp_s = np.maximum(tmp_s,0.0)
+        tmp_s = np.minimum(tmp_s,1.0)
+        tmp_hls[:,:,2] = tmp_s*255.0
+        tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
+        bgrs.append(tmp_bgr)
+    if len_anlges==1 and img.shape[2] >= 4:
+        return np.concatenate((bgrs[0],img[:,:,3:]),axis=2)
+    elif len_anlges!=1 and img.shape[2] >= 4:
+        a = img[:,:,3:4]
+        return [np.concatenate(x,a,axis=2) for x in bgrs]
+    elif len_anlges==1 and img.shape[2] < 4:
+        return bgrs[0]
     else:
-        return output
+        return bgrs
 
 #Perspective
 def __perspective_one(img,type,rate):
@@ -308,10 +234,8 @@ def __perspective_one(img,type,rate):
     img_rows = img.shape[0]
     src = np.array([[0.0,0.0],[img_cols,0.0],[img_cols,img_rows],[0.0,img_rows]],np.float32)
     dist = src.copy()
-        
     offset_x = rate*img_cols
     offset_y = rate*img_rows
-
     if type == 'U':
         dist[0,0] += offset_x
         dist[1,0] -= offset_x
@@ -339,123 +263,92 @@ def __perspective_one(img,type,rate):
     r = cv2.getPerspectiveTransform(src,dist)
     return cv2.warpPerspective(img,r,(img_cols, img_rows))
 
-def perspective(img,*rates):
-    len_rates = len(rates)
-    if len_rates==0:
-        raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    rand_type = random.choices(('U','UR','R','DR','D','DL','L','UL'),k=len(rates))
-    for t,rate in zip(rand_type,rates):
-        output.append(__perspective_one(img,t,rate))
-    if len_rates==1:
-        return output[0]
-    else:
-        return output
+#def perspective(img,*rates):
+#    len_rates = len(rates)
+#    if len_rates==0:
+#        raise ValueError('There must be at least 1 in \"rates\"')
+#        return None
+#    output = []
+#    rand_type = random.choices(('U','UR','R','DR','D','DL','L','UL'),k=len(rates))
+#    for t,rate in zip(rand_type,rates):
+#        output.append(__perspective_one(img,t,rate))
+#    if len_rates==1:
+#        return output[0]
+#    else:
+#        return output
 
 def perspectiveU(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'U',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'U',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'U',r) for r in rates]
 
 def perspectiveUR(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'UR',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'UR',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'UR',r) for r in rates]
 
 def perspectiveR(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'R',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'R',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'R',r) for r in rates]
 
 def perspectiveDR(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'DR',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'DR',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'DR',r) for r in rates]
 
 def perspectiveD(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
         return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'D',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'D',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'D',r) for r in rates]
 
 def perspectiveDL(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'DL',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'DL',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'DL',r) for r in rates]
 
 def perspectiveL(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'L',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'L',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'L',r) for r in rates]
 
 def perspectiveUL(img,*rates):
     len_rates = len(rates)
     if len_rates==0:
         raise ValueError('There must be at least 1 in \"rates\"')
-        return None
-    output = []
-    for rate in rates:
-        output.append(__perspective_one(img,'UL',rate))
-    if len_rates==1:
-        return output[0]
+    if len_rates == 1:
+        return __perspective_one(img,'UL',rates[0])
     else:
-        return output
+        return [__perspective_one(img,'UL',r) for r in rates]
 
 
 #class RESIZE_TYPE:
@@ -468,141 +361,124 @@ IMRESIZE_ROUNDDOWN_FILL_SELF = 5
 
 class imResizer:
 
-    def __init__(self, resize_type, dsize, interpolation=cv2.INTER_LINEAR):
-        self.set(resize_type, dsize, interpolation)
+    def __init__(self, resize_type, dsize, ssize=None,interpolation=cv2.INTER_LINEAR):
+        self.set(resize_type, dsize, ssize, interpolation)
         return
 
-    def set(self, resize_type, dsize ,interpolation):
+    def set(self, resize_type, dsize, ssize, interpolation):
+        if resize_type != IMRESIZE_STRETCH and \
+           resize_type != IMRESIZE_ROUNDUP and \
+           resize_type != IMRESIZE_ROUNDUP_CROP and \
+           resize_type != IMRESIZE_ROUNDDOWN and \
+           resize_type != IMRESIZE_ROUNDDOWN_FILL_BLACK and \
+           resize_type != IMRESIZE_ROUNDDOWN_FILL_SELF:
+            raise ValueError('invaild RESIZE_TYPE with value={0}'.format(self._resize_type))
         self._resize_type = resize_type
         self._dsize = dsize
+        self._dw,self._dh = dsize
         self._interpolation = interpolation
-
-        #key: ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
+        #(int(iw), int(ih)): (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
         self._param = {}
-
         return
     
-    def _transParam(self, this_img_width, this_img_height):
-        # output = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        src_size = (int(this_img_width), int(this_img_height))
-
-        found_param = self._param.get(src_size)
+    def _transParam(self, iw, ih):
+        # output = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
+        found_param = self._param.get((iw,ih))
         if found_param is not None:
             return found_param
-
+        dw,dh = self._dw,self._dh
+        fx = dw/iw
+        fy = dh/ih
         if self._resize_type==IMRESIZE_STRETCH:
-            output = (self._dsize, self._dsize, (self._dsize[0]/src_size[0], 0),(self._dsize[1]/src_size[1], 0))
-
+            output = (dw, dh, dw, dh, fx, 0, fy, 0)
         elif self._resize_type==IMRESIZE_ROUNDUP:
-            _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
-            _f = _fy if _fy > _fx else _fx
-            _cv_size = (int(src_size[0]*_f),int(src_size[1]*_f))
-            output = (_cv_size, _cv_size, (_f, 0),(_f, 0))
-
+            f = fy if fy > fx else fx
+            cv_w,cv_h = (int(iw*f),int(ih*f))
+            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
         elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
-            _fx, _fy = self._dsize[0]/src_w, self._dsize[1]/src_h
-            if _fy > _fx:
-                _f = _fy
-                _cv_size = (int(src_size[0]*_f), self._dsize[1])
+            if fy > fx:
+                f = fy
+                cv_w,cv_h = (int(iw*f), dh)
             else:
-                _f = _fx
-                _cv_size = (self._dsize[0], int(src_size[1]*_f))
-            output = (_cv_size, self._dsize, (_f, (self._dsize[0]-_cv_size[0])/2),\
-                    (_f,(self._dsize[1]-_cv_size[1])/2))
-
+                f = fx
+                cv_w,cv_h = (dw, int(ih*f))
+            output = (cv_w, cv_h, dw, dh, f, (dw-cv_w)/2, f, (dh-cv_h)/2)
         elif self._resize_type==IMRESIZE_ROUNDDOWN:
-            _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
-            _f = _fx if _fy > _fx else _fy
-            _cv_size = (int(src_size[0]*_f),int(src_size[1]*_f))
-            output = (_cv_size, _cv_size, (_f, 0),(_f, 0))
-
+            f = fx if fy > fx else fy
+            cv_w,cv_h = (int(iw*f),int(ih*f))
+            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
         elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
-            _fx,_fy = self._dsize[0]/src_size[0], self._dsize[1]/src_size[1]
-            if _fy > _fx:
-                _f = _fx
-                _cv_size = (self._dsize[0], int(src_size[1]*_f))
+            if fy > fx:
+                f = fx
+                cv_w,cv_h = (dw, int(ih*f))
             else:
-                _f = _fy
-                _cv_size = (int(src_size[0]*_f), self._dsize[1])
+                f = fy
+                cv_w,cv_h = (int(iw*f), dh)
 
-            output = (_cv_size, self._dsize, (_f, (self._dsize[0]-_cv_size[0])/2),\
-                    (_f,(self._dsize[1]-_cv_size[1])/2))
-
+            output = (cv_w, cv_h, iw, ih, f, (dw-cv_w)/2, f,(dh-cv_h)/2)
         else:
-            print(self._dsize)
-            print((self._dsize[0]/src_size[0], 0),(self._dsize[1]/src_size[1], 0))
-            output = (self._dsize, self._dsize, (self._dsize[0]/src_size[0], 0),(self._dsize[1]/src_size[1], 0))
-
-        self._param[src_size] = output
+            output = (dw, dh, dw, dh, fx, 0,fy, 0)
+        self._param[iw, ih] = output
         return output
 
-    # TODO: error in IMRESIZE_ROUNDUP_CROP
     def imResize(self,src):
-        # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(src.shape[1],src.shape[0])
-
+        # param = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
+        ih,iw = int(src.shape[0]),int(src.shape[1])
+        cv_w, cv_h, save_w, save_h, _, bx, _, by = self._transParam(iw,ih)
         if self._resize_type==IMRESIZE_STRETCH \
             or self._resize_type==IMRESIZE_ROUNDUP \
             or self._resize_type==IMRESIZE_ROUNDDOWN:
-            return cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
-
+            return cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
         elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
-            cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
-            if param[0][0] == param[1][0]:
-                ymin = int(-param[3][1])
-                return cvrimg[:,ymin:ymin+param[1][1]]
+            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
+            if cv_w == save_w:
+                ymin = int(-by)
+                return cvrimg[:,ymin:ymin+save_h]
             else:
-                xmin = int(-param[3][0])
-                return cvrimg[xmin:xmin+param[1][0]]
-
+                xmin = int(-bx)
+                return cvrimg[xmin:xmin+save_w]
         elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK:
-            cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
+            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
             img_to_save_shape = list(src.shape)
-            img_to_save_shape[0] = param[1][1]
-            img_to_save_shape[1] = param[1][0]
+            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
             img_to_save = np.zeros(img_to_save_shape, src.dtype)
-            if param[0][0] == param[1][0]:
-                ymin = int(param[3][1])
-                img_to_save[:,ymin:ymin+param[1][1]] = cvrimg
+            if cv_w == save_w:
+                ymin = int(by)
+                img_to_save[:,ymin:ymin+save_h] = cvrimg
                 return img_to_save
             else:
-                xmin = int(param[3][0])
-                img_to_save[xmin:xmin+param[1][0]] = cvrimg
+                xmin = int(bx)
+                img_to_save[xmin:xmin+save_w] = cvrimg
                 return img_to_save
-
         elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
-            cvrimg = cv2.resize(src, dsize = param[0], interpolation = self._interpolation)
+            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
             img_to_save_shape = list(src.shape)
-            img_to_save_shape[0] = param[1][1]
-            img_to_save_shape[1] = param[1][0]
-            img_to_save = np.zeros(img_to_save_shape, src.dtype)
-            if param[0][0] == param[1][0]:
-                ymin = int(param[3][1])
-                ymax_add_1 = ymin+param[1][1]
+            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
+            img_to_save = np.empty(img_to_save_shape, src.dtype)
+            if cv_w == save_w:
+                ymin = int(by)
+                ymax_add_1 = ymin+save_h
                 img_to_save[:,ymin:ymax_add_1] = cvrimg
                 img_to_save[:,:ymin] = img_to_save[:,ymin]
                 img_to_save[:,ymax_add_1:] = img_to_save[:,ymax_add_1]
                 return img_to_save
             else:
-                xmin = int(param[3][0])
-                xmax_add_1 = xmin+param[1][0]
+                xmin = int(bx)
+                xmax_add_1 = xmin+save_w
                 img_to_save[xmin:xmax_add_1] = cvrimg
                 img_to_save[:xmin] = img_to_save[xmin]
                 img_to_save[xmax_add_1:] = img_to_save[xmax_add_1]
                 return img_to_save
-
         else:
-            return cv2.resize(src, dsize = param[0], interpolation = self._interpolation)       
+            return cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)       
 
     def pntResize(self,pnt_src,img_src_shape):
-        # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(img_src_shape[1],img_src_shape[0])
-        return (int(pnt_src[0]*param[2][0]+param[2][1]),int(pnt_src[1]*param[3][0]+param[3][1]))
+        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
+        return (int(pnt_src[0]*fx+bx),int(pnt_src[1]*fy+by))
 
     def pntRecover(self,pnt_dst,img_src_shape):
-        # param = ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(img_src_shape[1],img_src_shape[0])
-        return (int((pnt_dst[0]-param[2][1])/param[2][0]),int((pnt_dst[1]-param[3][1])/param[3][0]))
+        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
+        return (int((pnt_dst[0]-bx)/fx),int((pnt_dst[1]-by)/fy))
 
 class cvRect():
     def __init__(self, _x, _y, _w, _h):
@@ -800,7 +676,6 @@ if __name__=='__main__':
         import numpy as np 
         import argparse
         import os
-        from color_ring import read_color_ring
 
         global img
         global opt_bar
@@ -812,7 +687,7 @@ if __name__=='__main__':
         user_img_view_size = (750,450)
         img = np.zeros([450,750,3],np.uint8)
         opt_bar = 0
-        opt_max_number = 21
+        opt_max_number = 17
         param_bar = 10
         param = 10
         aug_mat = img.copy()
@@ -909,13 +784,6 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, shuoming + "Flip left right", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
             elif(opt_bar == 3):
-                #Flip
-                aug_mat = pb.img.flip(img)
-                cv2.putText(aug_mat, aug_text + "Flip", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "(NULL)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "Random flip", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 4):
                 #Crop
                 param = 1.0 / 100.0* param_bar
                 if(param<0.01):
@@ -925,7 +793,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "(0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Random crop image by area percentage", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 5):
+            elif(opt_bar == 4):
                 #AffineX
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.affineX(img, param)
@@ -933,7 +801,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "X axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 6):
+            elif(opt_bar == 5):
                 #AffineY
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.affineY(img, param)
@@ -941,15 +809,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Y axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 7):
-                #AffineY
-                param = 1.0 / 50.0* (param_bar - 50)
-                aug_mat = pb.img.affine(img, param)
-                cv2.putText(aug_mat, aug_text + "Affine(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "X or Y axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 8):
+            elif(opt_bar == 6):
                 #Noise
                 param = 1.0 / 100.0* (param_bar)
                 aug_mat = pb.img.add_noise(img, param)
@@ -957,7 +817,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Add gauss noise", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 9):
+            elif(opt_bar == 7):
                 #Hue
                 param = 1.0 / 100.0*360.0 * param_bar
                 aug_mat = pb.img.adjust_hue(img, param)
@@ -965,7 +825,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "(---,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Hue angle (degree)", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 10):
+            elif(opt_bar == 8):
                 #Saturation
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.adjust_saturation(img, param)
@@ -973,7 +833,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Saturation", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 11):
+            elif(opt_bar == 9):
                 #Lightness
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.adjust_lightness(img, param)
@@ -981,7 +841,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Lightness", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 12):
+            elif(opt_bar == 10):
                 #PerspectiveUL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveUL(img, param)
@@ -989,7 +849,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "UL Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 13):
+            elif(opt_bar == 11):
                 #PerspectiveU
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveU(img, param)
@@ -997,7 +857,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "U  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 14):
+            elif(opt_bar == 12):
                 #PerspectiveUR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveUR(img, param)
@@ -1005,7 +865,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "UR Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 15):
+            elif(opt_bar == 13):
                 #PerspectiveL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveUL(img, param)
@@ -1013,15 +873,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "L  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 16):
-                #Perspective
-                param = 1.0 / 100.0* param_bar
-                aug_mat = pb.img.perspective(img, param)
-                cv2.putText(aug_mat, aug_text + "Perspective(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "Random perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 17):
+            elif(opt_bar == 14):
                 #PerspectiveR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveR(img, param)
@@ -1029,7 +881,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "R  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 18):
+            elif(opt_bar == 15):
                 #PerspectiveDL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveDL(img, param)
@@ -1037,7 +889,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "DL Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 19):
+            elif(opt_bar == 16):
                 #PerspectiveD
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveD(img, param)
@@ -1045,7 +897,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "D  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 20):
+            elif(opt_bar == 17):
                 #PerspectiveDR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveDR(img, param)
@@ -1053,26 +905,13 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "DR Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 21):
+            #elif(opt_bar == 18):
             #    #Distort
             #    param = 1.0 / 20.0* param_bar
             #    pb.img.imDistort(img, aug_mat, param)
             #    cv2.putText(aug_mat, aug_text + "Distort(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.putText(aug_mat, fanwei + "[0,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.putText(aug_mat, shuoming + "Add distort", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 21):
-            #    #Pyramid
-            #    aug_mat.fill(255 / 2)
-            #    cv2.putText(aug_mat, aug_text + "Pyramid(donw,up)", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, fanwei + "(0,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, shuoming + "Build image pyramid", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 23):#NotBackup
-            #    aug_mat.setTo(Scalar(255 / 2, 255 / 2, 255 / 2))
-            #    cv2.putText(aug_mat, aug_text + "NotBackup", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, fanwei + "(NULL)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, shuoming + "A flag means do not keep prestep images", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.imshow("augmented", aug_mat)
             return
 
@@ -1113,13 +952,6 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, shuoming + "Flip left right", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
             elif(opt_bar == 3):
-                #Flip
-                aug_mat = pb.img.flip(img)
-                cv2.putText(aug_mat, aug_text + "Flip", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "(NULL)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "Random flip", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 4):
                 #Crop
                 param = 1.0 / 100.0* param_bar
                 if(param<0.01):
@@ -1129,7 +961,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "(0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Random crop image by area percentage", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 5):
+            elif(opt_bar == 4):
                 #AffineX
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.affineX(img, param)
@@ -1137,7 +969,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "X axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 6):
+            elif(opt_bar == 5):
                 #AffineY
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.affineY(img, param)
@@ -1145,15 +977,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Y axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 7):
-                #AffineY
-                param = 1.0 / 50.0* (param_bar - 50)
-                aug_mat = pb.img.affine(img, param)
-                cv2.putText(aug_mat, aug_text + "Affine(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "[-1,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "X or Y axis affine", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 8):
+            elif(opt_bar == 6):
                 #Noise
                 param = 1.0 / 100.0* (param_bar)
                 aug_mat = pb.img.add_noise(img, param)
@@ -1161,7 +985,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Add gauss noise", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 9):
+            elif(opt_bar == 7):
                 #Hue
                 param = 1.0 / 100.0*360.0 * param_bar
                 aug_mat = pb.img.adjust_hue(img, param)
@@ -1169,7 +993,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "(---,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Hue angle (degree)", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 10):
+            elif(opt_bar == 8):
                 #Saturation
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.adjust_saturation(img, param)
@@ -1177,7 +1001,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Saturation", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 11):
+            elif(opt_bar == 9):
                 #Lightness
                 param = 1.0 / 50.0* (param_bar - 50)
                 aug_mat = pb.img.adjust_lightness(img, param)
@@ -1185,7 +1009,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "Lightness", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 12):
+            elif(opt_bar == 10):
                 #PerspectiveUL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveUL(img, param)
@@ -1193,7 +1017,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "UL Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 13):
+            elif(opt_bar == 11):
                 #PerspectiveU
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveU(img, param)
@@ -1201,7 +1025,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "U  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 14):
+            elif(opt_bar == 12):
                 #PerspectiveUR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveUR(img, param)
@@ -1209,7 +1033,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "UR Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 15):
+            elif(opt_bar == 13):
                 #PerspectiveL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveL(img, param)
@@ -1217,15 +1041,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "L  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 16):
-                #Perspective
-                param = 1.0 / 100.0* param_bar
-                aug_mat = pb.img.perspective(img, param)
-                cv2.putText(aug_mat, aug_text + "Perspective(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.putText(aug_mat, shuoming + "Random perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-                cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 17):
+            elif(opt_bar == 14):
                 #PerspectiveR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveR(img, param)
@@ -1233,7 +1049,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "R  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 18):
+            elif(opt_bar == 15):
                 #PerspectiveDL
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveDL(img, param)
@@ -1241,7 +1057,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "DL Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 19):
+            elif(opt_bar == 16):
                 #PerspectiveD
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveD(img, param)
@@ -1249,7 +1065,7 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "D  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            elif(opt_bar == 20):
+            elif(opt_bar == 17):
                 #PerspectiveDR
                 param = 1.0 / 100.0* param_bar
                 aug_mat = pb.img.perspectiveDR(img, param)
@@ -1257,26 +1073,13 @@ if __name__=='__main__':
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "DR Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 21):
+            #elif(opt_bar == 18):
             #    #Distort
             #    param = 1.0 / 20.0* param_bar
             #    pb.img.imDistort(img, aug_mat, param)
             #    cv2.putText(aug_mat, aug_text + "Distort(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.putText(aug_mat, fanwei + "[0,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.putText(aug_mat, shuoming + "Add distort", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 21):
-            #    #Pyramid
-            #    aug_mat.fill(255 / 2)
-            #    cv2.putText(aug_mat, aug_text + "Pyramid(donw,up)", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, fanwei + "(0,+++)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, shuoming + "Build image pyramid", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.imshow("augmented", aug_mat)
-            #elif(opt_bar == 23):#NotBackup
-            #    aug_mat.setTo(Scalar(255 / 2, 255 / 2, 255 / 2))
-            #    cv2.putText(aug_mat, aug_text + "NotBackup", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, fanwei + "(NULL)", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
-            #    cv2.putText(aug_mat, shuoming + "A flag means do not keep prestep images", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
             #    cv2.imshow("augmented", aug_mat)
             return
         
@@ -1288,13 +1091,16 @@ if __name__=='__main__':
         # load image to show
         img_resizer = pb.img.imResizer(pb.img.IMRESIZE_ROUNDUP,user_img_view_size)
         if(opt.img == ''):
-            org_img = read_color_ring()
+            org_img = pb.read_color_ring()
+            print(org_img.shape)
+            print(user_img_view_size)
         else:
             img_path = opt.img
             org_img = cv2.imread(img_path)
             if org_img is None or os.path.isfile(img_path)==False:
                 sys.exit('Can\'t find file: {0}'.format(img_path))
         img = img_resizer.imResize(org_img) 
+        print(img.shape)
 
         # show and run
         key_value = 0

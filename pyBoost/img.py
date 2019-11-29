@@ -163,7 +163,7 @@ def adjust_hue(img,*anlges):
     for anlge in anlges:
         tmp_h = hls[:,:,0]*2.0+anlge
         tmp_h -= tmp_h//360*360
-        tmp_hls[:,:,0] = tmp_h
+        tmp_hls[:,:,0] = tmp_h/2
         tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
         bgrs.append(tmp_bgr)
     if len_anlges==1 and img.shape[2] >= 4:
@@ -192,12 +192,12 @@ def adjust_lightness(img,*rates):
         tmp_hls[:,:,1] = tmp_l*255.0
         tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
         bgrs.append(tmp_bgr)
-    if len_anlges==1 and img.shape[2] >= 4:
+    if len_rates==1 and img.shape[2] >= 4:
         return np.concatenate((bgrs[0],img[:,:,3:]),axis=2)
-    elif len_anlges!=1 and img.shape[2] >= 4:
+    elif len_rates!=1 and img.shape[2] >= 4:
         a = img[:,:,3:4]
         return [np.concatenate(x,a,axis=2) for x in bgrs]
-    elif len_anlges==1 and img.shape[2] < 4:
+    elif len_rates==1 and img.shape[2] < 4:
         return bgrs[0]
     else:
         return bgrs
@@ -218,12 +218,12 @@ def adjust_saturation(img,*rates):
         tmp_hls[:,:,2] = tmp_s*255.0
         tmp_bgr = cv2.cvtColor(tmp_hls,cv2.COLOR_HLS2BGR)
         bgrs.append(tmp_bgr)
-    if len_anlges==1 and img.shape[2] >= 4:
+    if len_rates==1 and img.shape[2] >= 4:
         return np.concatenate((bgrs[0],img[:,:,3:]),axis=2)
-    elif len_anlges!=1 and img.shape[2] >= 4:
+    elif len_rates!=1 and img.shape[2] >= 4:
         a = img[:,:,3:4]
         return [np.concatenate(x,a,axis=2) for x in bgrs]
-    elif len_anlges==1 and img.shape[2] < 4:
+    elif len_rates==1 and img.shape[2] < 4:
         return bgrs[0]
     else:
         return bgrs
@@ -685,9 +685,10 @@ if __name__=='__main__':
         global aug_mat
 
         user_img_view_size = (750,450)
+        # user_img_view_size = (1080,720)
         img = np.zeros([450,750,3],np.uint8)
         opt_bar = 0
-        opt_max_number = 17
+        opt_max_number = 18
         param_bar = 10
         param = 10
         aug_mat = img.copy()
@@ -868,7 +869,7 @@ if __name__=='__main__':
             elif(opt_bar == 13):
                 #PerspectiveL
                 param = 1.0 / 100.0* param_bar
-                aug_mat = pb.img.perspectiveUL(img, param)
+                aug_mat = pb.img.perspectiveL(img, param)
                 cv2.putText(aug_mat, aug_text + "PerspectiveL(" + str(param) + ")", (30, 30), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, fanwei + "[0,1]", (30, 60), 1, 1.5, (255/2, 0 , 255/2), 2)
                 cv2.putText(aug_mat, shuoming + "L  Perspective", (30, 90), 1, 1.5, (255/2, 0 , 255/2), 2)
@@ -1092,15 +1093,12 @@ if __name__=='__main__':
         img_resizer = pb.img.imResizer(pb.img.IMRESIZE_ROUNDUP,user_img_view_size)
         if(opt.img == ''):
             org_img = pb.read_color_ring()
-            print(org_img.shape)
-            print(user_img_view_size)
         else:
             img_path = opt.img
             org_img = cv2.imread(img_path)
             if org_img is None or os.path.isfile(img_path)==False:
                 sys.exit('Can\'t find file: {0}'.format(img_path))
         img = img_resizer.imResize(org_img) 
-        print(img.shape)
 
         # show and run
         key_value = 0

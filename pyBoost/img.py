@@ -361,11 +361,11 @@ IMRESIZE_ROUNDDOWN_FILL_SELF = 5
 
 class imResizer:
 
-    def __init__(self, resize_type, dsize, ssize=None,interpolation=cv2.INTER_LINEAR):
-        self.set(resize_type, dsize, ssize, interpolation)
+    def __init__(self, resize_type, dsize, interpolation=cv2.INTER_LINEAR):
+        self.set(resize_type, dsize, interpolation)
         return
 
-    def set(self, resize_type, dsize, ssize, interpolation):
+    def set(self, resize_type, dsize, interpolation):
         if resize_type != IMRESIZE_STRETCH and \
            resize_type != IMRESIZE_ROUNDUP and \
            resize_type != IMRESIZE_ROUNDUP_CROP and \
@@ -381,6 +381,7 @@ class imResizer:
         self._param = {}
         return
     
+    # TODO
     def _transParam(self, iw, ih):
         # output = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
         found_param = self._param.get((iw,ih))
@@ -692,61 +693,6 @@ if __name__=='__main__':
         param_bar = 10
         param = 10
         aug_mat = img.copy()
-
-        def makeDefaultImg():
-            global img
-            global opt_bar
-            global opt_max_number
-            global param_bar
-            global param
-            global aug_mat
-
-            img[:,:,:]=255
-            j=0
-            while(j<450/50+1):
-                cv2.line(img,(0,int(j*50)),(750,int(j*50)),(0,0,0),3)
-                j+=1
-            j=0
-            while(j<750/50+1):
-                cv2.line(img,(int(j*50),0),(int(j*50),450),(0,0,0),3)
-                j+=1
-
-            _box_size = 50-5
-            img[(3*50+3):((3*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),0] = 255 
-            img[(3*50+3):((3*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),1] = 0
-            img[(3*50+3):((3*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),2] = 255
-
-            img[(3*50+3):((3*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),0] = 0
-            img[(3*50+3):((3*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),1] = 0
-            img[(3*50+3):((3*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),2] = 255
-
-            img[(3*50+3):((3*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),0] = 0 
-            img[(3*50+3):((3*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),1] = 255
-            img[(3*50+3):((3*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),2] = 255
-
-            img[(4*50+3):((4*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),0] = 0 
-            img[(4*50+3):((4*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),1] = 0
-            img[(4*50+3):((4*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),2] = 0
-
-            img[(4*50+3):((4*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),0] = 255 
-            img[(4*50+3):((4*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),1] = 255
-            img[(4*50+3):((4*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),2] = 255
-
-            img[(4*50+3):((4*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),0] = 255/2 
-            img[(4*50+3):((4*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),1] = 255/2
-            img[(4*50+3):((4*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),2] = 255/2
-
-            img[(5*50+3):((5*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),0] = 255 
-            img[(5*50+3):((5*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),1] = 0
-            img[(5*50+3):((5*50+3)+_box_size),(6*50+3):((6*50+3)+_box_size),2] = 0
-
-            img[(5*50+3):((5*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),0] = 255 
-            img[(5*50+3):((5*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),1] = 255
-            img[(5*50+3):((5*50+3)+_box_size),(7*50+3):((7*50+3)+_box_size),2] = 0
-
-            img[(5*50+3):((5*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),0] = 0 
-            img[(5*50+3):((5*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),1] = 255
-            img[(5*50+3):((5*50+3)+_box_size),(8*50+3):((8*50+3)+_box_size),2] = 0
 
         def on_trackbar_share_opt_bar(value):
             global img
@@ -1108,6 +1054,7 @@ if __name__=='__main__':
             cv2.createTrackbar('param','original',param_bar,100,on_trackbar_share_param_bar)
             on_trackbar_share_opt_bar(opt_bar)
             on_trackbar_share_param_bar(param_bar)
+
             key_value = cv2.waitKey(0)
         
             if (key_value == ord('d') or key_value == ord('D')):

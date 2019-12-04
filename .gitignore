@@ -1,5 +1,4 @@
-﻿
-*.pyc
+﻿*.pyc
 pyBoost/imBoost_test_output/*
 pyFusion/.AUGTEMP/*
 pyCode.VC.db

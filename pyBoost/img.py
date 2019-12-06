@@ -362,10 +362,10 @@ IMRESIZE_ROUNDDOWN_FILL_SELF = 5
 class imResizer:
 
     def __init__(self, resize_type, dsize, interpolation=cv2.INTER_LINEAR):
-        self.set(resize_type, dsize, interpolation)
+        self._set(resize_type, dsize, interpolation)
         return
 
-    def set(self, resize_type, dsize, interpolation):
+    def _set(self, resize_type, dsize, interpolation):
         if resize_type != IMRESIZE_STRETCH and \
            resize_type != IMRESIZE_ROUNDUP and \
            resize_type != IMRESIZE_ROUNDUP_CROP and \
@@ -381,6 +381,52 @@ class imResizer:
         self._param = {}
         return
     
+    def _transParam(self, iw, ih):
+        # output = (cv_w,cv_h), (bx,sw,by,sh), (fx,bx,fy,by)
+        found_param = self._param.get((iw,ih))
+        if found_param is not None:
+            return found_param
+        dw,dh = self._dw,self._dh
+        fx = dw/iw
+        fy = dh/ih
+        if self._resize_type==IMRESIZE_STRETCH:
+            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
+        elif self._resize_type==IMRESIZE_ROUNDUP:
+            if fy > fx:
+                f = fy
+                cv_w,cv_h = (int(iw*f), dh)
+            else:
+                f = fx
+                cv_w,cv_h = (dw, int(ih*f))
+            cv_w,cv_h = (int(iw*f),int(ih*f))
+            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
+        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
+            if fy > fx:
+                f = fy
+                cv_w,cv_h = (int(iw*f), dh)
+            else:
+                f = fx
+                cv_w,cv_h = (dw, int(ih*f))
+            output = (cv_w,cv_h), ((cv_w-dw)//2,dw,(cv_h-dh)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
+        elif self._resize_type==IMRESIZE_ROUNDDOWN:
+            f = min(fx, fy)
+            cv_w,cv_h = (int(iw*f),int(ih*f))
+            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
+        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
+            if fy > fx:
+                f = fx
+                cv_w,cv_h = (dw, int(ih*f))
+            else:
+                f = fy
+                cv_w,cv_h = (int(iw*f), dh)
+
+            output = (cv_w,cv_h), ((dw-cv_w)//2,dw,(dh-cv_h)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
+        else:
+            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
+        self._param[iw, ih] = output
+        return output
+
+
     # TODO
     def _transParam(self, iw, ih):
         # output = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)

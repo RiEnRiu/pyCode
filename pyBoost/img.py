@@ -359,173 +359,388 @@ IMRESIZE_ROUNDDOWN = 3
 IMRESIZE_ROUNDDOWN_FILL_BLACK = 4
 IMRESIZE_ROUNDDOWN_FILL_SELF = 5 
 
-class imResizer:
+def _cv2_resize(src,dsize,interpolation=None):
+    if interpolation is None:
+        return cv2.resize(src,dsize)
+    else:
+        return cv2.resize(src,dsize,interpolation=interpolation)
 
-    def __init__(self, resize_type, dsize, interpolation=cv2.INTER_LINEAR):
-        self._set(resize_type, dsize, interpolation)
-        return
+def imResize(src,dsize,fx=None,fy=None,interpolation=None, rtype=None):
+    if fx is not None and fy is not None:
+        dsize = int(fx*dsize[0]),int(fy*dsize[1])
+    elif (fx is None and fy is not None) or (fx is not None and fy is None):
+        raise ValueError('invalid input, fx={0} and fy={1}'.format(fx,fy))
+    if rtype is None:
+        return _cv2_resize(src,dsize,interpolation=interpolation)
+    elif rtype==IMRESIZE_STRETCH:
+        return _cv2_resize(src,dsize,interpolation=interpolation)
+    elif rtype==IMRESIZE_ROUNDUP:
+        dw,dh = dsize
+        ih,iw = src.shape[0],src.shape[1]
+        fx = dw/iw
+        fy = dh/ih
+        if fy > fx:
+            _dsize = (int(iw*fy), dh)
+        else:
+            _dsize = (dw, int(ih*fx))
+        return _cv2_resize(src,_dsize,interpolation=interpolation)
+    elif rtype==IMRESIZE_ROUNDUP_CROP:
+        dw,dh = dsize
+        ih,iw = src.shape[0],src.shape[1]
+        fx = dw/iw
+        fy = dh/ih
+        if fy > fx:
+            _dw = int(iw*fy)
+            img = _cv2_resize(src,(_dw,dh),interpolation=interpolation)
+            x0 =  int((_dw-dw)/2)
+            return img[:,x0:x0+dw]
+        else:
+            _dh = int(ih*fx)
+            img = _cv2_resize(src,(dw,_dh),interpolation=interpolation)
+            y0 =  int((_dh-dh)/2)
+            return img[y0:y0+dh,:]
+    elif rtype==IMRESIZE_ROUNDDOWN:
+        dw,dh = dsize
+        ih,iw = src.shape[0],src.shape[1]
+        fx = dw/iw
+        fy = dh/ih
+        if fx > fy:
+            _dsize = (int(iw*fy), dh)
+        else:
+            _dsize = (dw, int(ih*fx))
+        return _cv2_resize(src,_dsize,interpolation=interpolation)
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_BLACK:
+        dw,dh = dsize
+        ih,iw = src.shape[0],src.shape[1]
+        fx = dw/iw
+        fy = dh/ih
+        rimg_shape = list(src.shape)
+        rimg_shape[0],rimg_shape[1] = dh,dw
+        rimg_shape = tuple(rimg_shape)
+        rimg = np.zeros(rimg_shape,src.dtype)
+        if fx > fy:
+            _dw = int(iw*fy)
+            img = _cv2_resize(src,(_dw,dh),interpolation=interpolation)
+            x0 =  int((dw-_dw)/2)
+            rimg[:,x0:x0+_dw] = img
+            return rimg
+        else:
+            _dh = int(ih*fx)
+            img = _cv2_resize(src,(dw,_dh),interpolation=interpolation)
+            y0 =  int((dh-_dh)/2)
+            rimg[y0:y0+_dh,:] = img
+            return rimg
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_SELF:
+        dw,dh = dsize
+        ih,iw = src.shape[0],src.shape[1]
+        fx = dw/iw
+        fy = dh/ih
+        rimg_shape = list(src.shape)
+        rimg_shape[0],rimg_shape[1] = dh,dw
+        rimg_shape = tuple(rimg_shape)
+        rimg = np.empty(rimg_shape,src.dtype)
+        if fx > fy:
+            _dw = int(iw*fy)
+            img = _cv2_resize(src,(_dw,dh),interpolation=interpolation)
+            x0 =  int((dw-_dw)/2)
+            x1 = x0+_dw
+            rimg[:,x0:x1] = img
+            if ih!=0 and iw!=0:
+                if x0>0:
+                    rimg[:,:x0] = img[:,0:1]
+                if x1<dw:
+                    rimg[:,x1:] = img[:,-2:-1]
+            return rimg
 
-    def _set(self, resize_type, dsize, interpolation):
-        if resize_type != IMRESIZE_STRETCH and \
-           resize_type != IMRESIZE_ROUNDUP and \
-           resize_type != IMRESIZE_ROUNDUP_CROP and \
-           resize_type != IMRESIZE_ROUNDDOWN and \
-           resize_type != IMRESIZE_ROUNDDOWN_FILL_BLACK and \
-           resize_type != IMRESIZE_ROUNDDOWN_FILL_SELF:
-            raise ValueError('invaild RESIZE_TYPE with value={0}'.format(self._resize_type))
-        self._resize_type = resize_type
-        self._dsize = dsize
-        self._dw,self._dh = dsize
-        self._interpolation = interpolation
-        #(int(iw), int(ih)): (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
-        self._param = {}
-        return
+        else:
+            _dh = int(ih*fx)
+            img = _cv2_resize(src,(dw,_dh),interpolation=interpolation)
+            y0 =  int((dh-_dh)/2)
+            y1 = y0+_dh
+            rimg[y0:y1,:] = img
+            if ih!=0 and iw!=0:
+                if y0>0:
+                    rimg[:y0] = img[0:1]
+                if y1<dh:
+                    rimg[y1:] = img[-2:-1]
+            return rimg
+    else:
+        raise ValueError('invaild rtype={0}'.format(rtype))
     
-    def _transParam(self, iw, ih):
-        # output = (cv_w,cv_h), (bx,sw,by,sh), (fx,bx,fy,by)
-        found_param = self._param.get((iw,ih))
-        if found_param is not None:
-            return found_param
-        dw,dh = self._dw,self._dh
-        fx = dw/iw
-        fy = dh/ih
-        if self._resize_type==IMRESIZE_STRETCH:
-            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
-        elif self._resize_type==IMRESIZE_ROUNDUP:
-            if fy > fx:
-                f = fy
-                cv_w,cv_h = (int(iw*f), dh)
-            else:
-                f = fx
-                cv_w,cv_h = (dw, int(ih*f))
-            cv_w,cv_h = (int(iw*f),int(ih*f))
-            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
-        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
-            if fy > fx:
-                f = fy
-                cv_w,cv_h = (int(iw*f), dh)
-            else:
-                f = fx
-                cv_w,cv_h = (dw, int(ih*f))
-            output = (cv_w,cv_h), ((cv_w-dw)//2,dw,(cv_h-dh)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
-        elif self._resize_type==IMRESIZE_ROUNDDOWN:
-            f = min(fx, fy)
-            cv_w,cv_h = (int(iw*f),int(ih*f))
-            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
-        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
-            if fy > fx:
-                f = fx
-                cv_w,cv_h = (dw, int(ih*f))
-            else:
-                f = fy
-                cv_w,cv_h = (int(iw*f), dh)
-
-            output = (cv_w,cv_h), ((dw-cv_w)//2,dw,(dh-cv_h)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
+def pntResize(pnt_src,img_src_shape,dsize,fx=None,fy=None,rtype=None):
+    x,y = pnt_src
+    dw,dh = dsize
+    ih,iw = img_src_shape[0],img_src_shape[1]
+    if fx is not None and fy is not None:
+        dsize = int(fx*iw),int(fy*ih)
+    elif (fx is None and fy is not None) or (fx is not None and fy is None):
+        raise ValueError('invalid input, fx={0} and fy={1}'.format(fx,fy))
+    else:
+        fx,fy = dw/iw,dh/ih
+    dsize = (dw,dh)
+    if rtype is None:
+        return (int(x*fx),int(y*fy))
+    elif rtype==IMRESIZE_STRETCH:
+        return (int(x*fx),int(y*fy))
+    elif rtype==IMRESIZE_ROUNDUP:
+        f = max(fx,fy)
+        return (int(x*f),int(y*f))
+    elif rtype==IMRESIZE_ROUNDUP_CROP:
+        if fy > fx:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int(x*fy-x0),int(y*fy))
         else:
-            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
-        self._param[iw, ih] = output
-        return output
-
-
-    # TODO
-    def _transParam(self, iw, ih):
-        # output = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
-        found_param = self._param.get((iw,ih))
-        if found_param is not None:
-            return found_param
-        dw,dh = self._dw,self._dh
-        fx = dw/iw
-        fy = dh/ih
-        if self._resize_type==IMRESIZE_STRETCH:
-            output = (dw, dh, dw, dh, fx, 0, fy, 0)
-        elif self._resize_type==IMRESIZE_ROUNDUP:
-            f = fy if fy > fx else fx
-            cv_w,cv_h = (int(iw*f),int(ih*f))
-            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
-        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
-            if fy > fx:
-                f = fy
-                cv_w,cv_h = (int(iw*f), dh)
-            else:
-                f = fx
-                cv_w,cv_h = (dw, int(ih*f))
-            output = (cv_w, cv_h, dw, dh, f, (dw-cv_w)/2, f, (dh-cv_h)/2)
-        elif self._resize_type==IMRESIZE_ROUNDDOWN:
-            f = fx if fy > fx else fy
-            cv_w,cv_h = (int(iw*f),int(ih*f))
-            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
-        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
-            if fy > fx:
-                f = fx
-                cv_w,cv_h = (dw, int(ih*f))
-            else:
-                f = fy
-                cv_w,cv_h = (int(iw*f), dh)
-
-            output = (cv_w, cv_h, iw, ih, f, (dw-cv_w)/2, f,(dh-cv_h)/2)
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(x*fx),int(y*fx-y0))
+    elif rtype==IMRESIZE_ROUNDDOWN:
+        f = min(fx,fy)
+        return (int(x*f),int(y*f))
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_BLACK:
+        if fx > fy:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int(x*fy-x0),int(y*fy))
         else:
-            output = (dw, dh, dw, dh, fx, 0,fy, 0)
-        self._param[iw, ih] = output
-        return output
-
-    def imResize(self,src):
-        # param = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
-        ih,iw = int(src.shape[0]),int(src.shape[1])
-        cv_w, cv_h, save_w, save_h, _, bx, _, by = self._transParam(iw,ih)
-        if self._resize_type==IMRESIZE_STRETCH \
-            or self._resize_type==IMRESIZE_ROUNDUP \
-            or self._resize_type==IMRESIZE_ROUNDDOWN:
-            return cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
-        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
-            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
-            if cv_w == save_w:
-                ymin = int(-by)
-                return cvrimg[:,ymin:ymin+save_h]
-            else:
-                xmin = int(-bx)
-                return cvrimg[xmin:xmin+save_w]
-        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK:
-            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
-            img_to_save_shape = list(src.shape)
-            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
-            img_to_save = np.zeros(img_to_save_shape, src.dtype)
-            if cv_w == save_w:
-                ymin = int(by)
-                img_to_save[:,ymin:ymin+save_h] = cvrimg
-                return img_to_save
-            else:
-                xmin = int(bx)
-                img_to_save[xmin:xmin+save_w] = cvrimg
-                return img_to_save
-        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
-            cvrimg = cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
-            img_to_save_shape = list(src.shape)
-            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
-            img_to_save = np.empty(img_to_save_shape, src.dtype)
-            if cv_w == save_w:
-                ymin = int(by)
-                ymax_add_1 = ymin+save_h
-                img_to_save[:,ymin:ymax_add_1] = cvrimg
-                img_to_save[:,:ymin] = img_to_save[:,ymin]
-                img_to_save[:,ymax_add_1:] = img_to_save[:,ymax_add_1]
-                return img_to_save
-            else:
-                xmin = int(bx)
-                xmax_add_1 = xmin+save_w
-                img_to_save[xmin:xmax_add_1] = cvrimg
-                img_to_save[:xmin] = img_to_save[xmin]
-                img_to_save[xmax_add_1:] = img_to_save[xmax_add_1]
-                return img_to_save
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(x*fx),int(y*fx-y0))
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_SELF:
+        if fx > fy:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int(x*fy-x0),int(y*fy))
         else:
-            return cv2.resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)       
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(x*fx),int(y*fx-y0))
+    else:
+        raise ValueError('invaild rtype={0}'.format(rtype))
 
-    def pntResize(self,pnt_src,img_src_shape):
-        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
-        return (int(pnt_src[0]*fx+bx),int(pnt_src[1]*fy+by))
+def pntRecover(pnt_dst,img_src_shape,dsize,fx=None,fy=None,rtype=None):
+    rx,ry = pnt_dst
+    dw,dh = dsize
+    ih,iw = img_src_shape[0],img_src_shape[1]
+    if fx is None:
+        fx = dsize[0]/iw
+    else:
+        dw = fx*iw
+    if fy is None:
+        fy = dsize[1]/ih
+    else:
+        dh = fy*ih
+    dsize = (dw,dh)
+    if rtype is None:
+        return (int(rx/fx),int(ry/fy))
+    elif rtype==IMRESIZE_STRETCH:
+        return (int(rx/fx),int(ry/fy))
+    elif rtype==IMRESIZE_ROUNDUP:
+        f = max(fx,fy)
+        return (int(rx/f),int(ry/f))
+    elif rtype==IMRESIZE_ROUNDUP_CROP:
+        if fy > fx:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int((rx+x0)/fy),int(ry/fy))
+        else:
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(rx/fx),int((ry+y0)/fx))
+    elif rtype==IMRESIZE_ROUNDDOWN:
+        f = min(fx,fy)
+        return (int(rx/f),int(ry/f))
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_BLACK:
+        if fx > fy:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int((rx+x0)/fy),int(ry/fy))
+        else:
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(rx/fx),int((ry+y0)/fx))
+    elif rtype==IMRESIZE_ROUNDDOWN_FILL_SELF:
+        if fx > fy:
+            _dw = int(iw*fy)
+            x0 =  int((_dw-dw)/2)
+            return (int((rx+x0)/fy),int(ry/fy))
+        else:
+            _dh = int(ih*fx)
+            y0 =  int((_dh-dh)/2)
+            return (int(rx/fx),int((ry+y0)/fx))
+    else:
+        raise ValueError('invaild rtype={0}'.format(rtype))
 
-    def pntRecover(self,pnt_dst,img_src_shape):
-        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
-        return (int((pnt_dst[0]-bx)/fx),int((pnt_dst[1]-by)/fy))
+
+
+
+
+#class imResizer:
+
+#    def __init__(self, resize_type, dsize, interpolation=cv2.INTER_LINEAR):
+#        self._set(resize_type, dsize, interpolation)
+#        return
+
+#    def _set(self, resize_type, dsize, interpolation):
+#        if resize_type != IMRESIZE_STRETCH and \
+#           resize_type != IMRESIZE_ROUNDUP and \
+#           resize_type != IMRESIZE_ROUNDUP_CROP and \
+#           resize_type != IMRESIZE_ROUNDDOWN and \
+#           resize_type != IMRESIZE_ROUNDDOWN_FILL_BLACK and \
+#           resize_type != IMRESIZE_ROUNDDOWN_FILL_SELF:
+#            raise ValueError('invaild RESIZE_TYPE with value={0}'.format(self._resize_type))
+#        self._resize_type = resize_type
+#        self._dsize = dsize
+#        self._dw,self._dh = dsize
+#        self._interpolation = interpolation
+#        #(int(iw), int(ih)): (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
+#        self._param = {}
+#        return
+    
+#    def _transParam(self, iw, ih):
+#        # output = (cv_w,cv_h), (bx,sw,by,sh), (fx,bx,fy,by)
+#        found_param = self._param.get((iw,ih))
+#        if found_param is not None:
+#            return found_param
+#        dw,dh = self._dw,self._dh
+#        fx = dw/iw
+#        fy = dh/ih
+#        if self._resize_type==IMRESIZE_STRETCH:
+#            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
+#        elif self._resize_type==IMRESIZE_ROUNDUP:
+#            if fy > fx:
+#                f = fy
+#                cv_w,cv_h = (int(iw*f), dh)
+#            else:
+#                f = fx
+#                cv_w,cv_h = (dw, int(ih*f))
+#            cv_w,cv_h = (int(iw*f),int(ih*f))
+#            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
+#        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
+#            if fy > fx:
+#                f = fy
+#                cv_w,cv_h = (int(iw*f), dh)
+#            else:
+#                f = fx
+#                cv_w,cv_h = (dw, int(ih*f))
+#            output = (cv_w,cv_h), ((cv_w-dw)//2,dw,(cv_h-dh)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN:
+#            f = min(fx, fy)
+#            cv_w,cv_h = (int(iw*f),int(ih*f))
+#            output = (cv_w,cv_h), (0,cv_w,0,cv_h), (f,0,f,0)
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
+#            if fy > fx:
+#                f = fx
+#                cv_w,cv_h = (dw, int(ih*f))
+#            else:
+#                f = fy
+#                cv_w,cv_h = (int(iw*f), dh)
+
+#            output = (cv_w,cv_h), ((dw-cv_w)//2,dw,(dh-cv_h)//2,dh), (f,(dw-cv_w)//2,f,(dh-cv_h)//2)
+#        else:
+#            output = (dw,dh), (0,dw,0,dh), (fx,0,fy,0)
+#        self._param[iw, ih] = output
+#        return output
+
+#    # TODO
+#    def _transParam(self, iw, ih):
+#        # output = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
+#        found_param = self._param.get((iw,ih))
+#        if found_param is not None:
+#            return found_param
+#        dw,dh = self._dw,self._dh
+#        fx = dw/iw
+#        fy = dh/ih
+#        if self._resize_type==IMRESIZE_STRETCH:
+#            output = (dw, dh, dw, dh, fx, 0, fy, 0)
+#        elif self._resize_type==IMRESIZE_ROUNDUP:
+#            f = fy if fy > fx else fx
+#            cv_w,cv_h = (int(iw*f),int(ih*f))
+#            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
+#        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
+#            if fy > fx:
+#                f = fy
+#                cv_w,cv_h = (int(iw*f), dh)
+#            else:
+#                f = fx
+#                cv_w,cv_h = (dw, int(ih*f))
+#            output = (cv_w, cv_h, dw, dh, f, (dw-cv_w)/2, f, (dh-cv_h)/2)
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN:
+#            f = fx if fy > fx else fy
+#            cv_w,cv_h = (int(iw*f),int(ih*f))
+#            output = (cv_w, cv_h, cv_w, cv_h, f, 0, f, 0)
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK or self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
+#            if fy > fx:
+#                f = fx
+#                cv_w,cv_h = (dw, int(ih*f))
+#            else:
+#                f = fy
+#                cv_w,cv_h = (int(iw*f), dh)
+
+#            output = (cv_w, cv_h, iw, ih, f, (dw-cv_w)/2, f,(dh-cv_h)/2)
+#        else:
+#            output = (dw, dh, dw, dh, fx, 0,fy, 0)
+#        self._param[iw, ih] = output
+#        return output
+
+#    def imResize(self,src):
+#        # param = (cv_w, cv_h, save_w, save_h, fx, bx, fy, by)
+#        ih,iw = int(src.shape[0]),int(src.shape[1])
+#        cv_w, cv_h, save_w, save_h, _, bx, _, by = self._transParam(iw,ih)
+#        if self._resize_type==IMRESIZE_STRETCH \
+#            or self._resize_type==IMRESIZE_ROUNDUP \
+#            or self._resize_type==IMRESIZE_ROUNDDOWN:
+#            return _cv2_resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
+#        elif self._resize_type==IMRESIZE_ROUNDUP_CROP:
+#            cvrimg = _cv2_resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
+#            if cv_w == save_w:
+#                ymin = int(-by)
+#                return cvrimg[:,ymin:ymin+save_h]
+#            else:
+#                xmin = int(-bx)
+#                return cvrimg[xmin:xmin+save_w]
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_BLACK:
+#            cvrimg = _cv2_resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
+#            img_to_save_shape = list(src.shape)
+#            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
+#            img_to_save = np.zeros(img_to_save_shape, src.dtype)
+#            if cv_w == save_w:
+#                ymin = int(by)
+#                img_to_save[:,ymin:ymin+save_h] = cvrimg
+#                return img_to_save
+#            else:
+#                xmin = int(bx)
+#                img_to_save[xmin:xmin+save_w] = cvrimg
+#                return img_to_save
+#        elif self._resize_type==IMRESIZE_ROUNDDOWN_FILL_SELF:
+#            cvrimg = _cv2_resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)
+#            img_to_save_shape = list(src.shape)
+#            img_to_save_shape[0], img_to_save_shape[1] = save_h, save_w
+#            img_to_save = np.empty(img_to_save_shape, src.dtype)
+#            if cv_w == save_w:
+#                ymin = int(by)
+#                ymax_add_1 = ymin+save_h
+#                img_to_save[:,ymin:ymax_add_1] = cvrimg
+#                img_to_save[:,:ymin] = img_to_save[:,ymin]
+#                img_to_save[:,ymax_add_1:] = img_to_save[:,ymax_add_1]
+#                return img_to_save
+#            else:
+#                xmin = int(bx)
+#                xmax_add_1 = xmin+save_w
+#                img_to_save[xmin:xmax_add_1] = cvrimg
+#                img_to_save[:xmin] = img_to_save[xmin]
+#                img_to_save[xmax_add_1:] = img_to_save[xmax_add_1]
+#                return img_to_save
+#        else:
+#            return _cv2_resize(src, dsize = (cv_w, cv_h), interpolation = self._interpolation)       
+
+#    def pntResize(self,pnt_src,img_src_shape):
+#        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
+#        return (int(pnt_src[0]*fx+bx),int(pnt_src[1]*fy+by))
+
+#    def pntRecover(self,pnt_dst,img_src_shape):
+#        _, _, _, _, fx, bx, fy, by = self._transParam(int(img_src_shape[1]),int(img_src_shape[0]))
+#        return (int((pnt_dst[0]-bx)/fx),int((pnt_dst[1]-by)/fy))
 
 class cvRect():
     def __init__(self, _x, _y, _w, _h):
@@ -676,23 +891,88 @@ if __name__=='__main__':
     sys.path.append('../')
     import pyBoost as pb
 
-    def test_imResizer(save_folder_name):
-        import os
-        import time
-        import tqdm
-        img_path = r'G:\obj_mask_10'
-        img_list = pb.deep_scan_file(img_path,'.jpg.png.jpeg',False)
-        imrszr = pb.img.imResizer(pb.img.IMRESIZE_ROUNDDOWN, (400,400), cv2.INTER_CUBIC)
-        save_path = os.path.join(save_folder_name,'imResizer')
-        begin_time_point = time.time()
-        for i,one_img_name in tqdm.tqdm(enumerate(img_list)):
-            frone_path,name = os.path.split(one_img_name)
-            pb.makedirs(os.path.join(save_path,frone_path))
-            img = cv2.imread(os.path.join(img_path,one_img_name),cv2.IMREAD_UNCHANGED)
-            img_to_save = imrszr.imResize(img)
-            cv2.imwrite(os.path.join(save_path,frone_path,name),img_to_save)
-        end_time_point = time.time()
-        print((end_time_point-begin_time_point))
+    def test_imResize():
+        img = pb.color_ring.read_color_ring()
+        pnt_src = (random.randint(0,img.shape[1]-1),random.randint(0,img.shape[0]-1))
+        cv2.destroyWindow('img')
+        cv2.imshow('img',cv2.circle(img.copy(),pnt_src,3,(0,0,0),3))
+        cv2.waitKey(0)
+        dsize = (300,400)
+        color = (0,0,0)
+        interpolation = cv2.INTER_CUBIC
+        None_img = imResize(img,dsize,interpolation=interpolation)
+        None_pnt = pntResize(pnt_src,img.shape,dsize)
+        cv2.destroyWindow('None_img_{0}'.format(str(dsize)))
+        cv2.imshow('None_img_{0}'.format(str(dsize)),cv2.circle(None_img,None_pnt,3,color,3))
+        cv2.waitKey(0)
+        str_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_STRETCH)
+        str_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_STRETCH)
+        cv2.destroyWindow('str_img_{0}'.format(str(dsize)))
+        cv2.imshow('str_img_{0}'.format(str(dsize)),cv2.circle(str_img,str_pnt,3,color,3))
+        cv2.waitKey(0)
+        up_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDUP)
+        up_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDUP)
+        cv2.destroyWindow('up_img_{0}'.format(str(dsize)))
+        cv2.imshow('up_img_{0}'.format(str(dsize)),cv2.circle(up_img,up_pnt,3,color,3))
+        cv2.waitKey(0)
+        up_crop_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDUP_CROP)
+        up_crop_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDUP_CROP)
+        cv2.destroyWindow('up_crop_img_{0}'.format(str(dsize)))
+        cv2.imshow('up_crop_img_{0}'.format(str(dsize)),cv2.circle(up_crop_img,up_crop_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN)
+        down_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN)
+        cv2.destroyWindow('down_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_img_{0}'.format(str(dsize)),cv2.circle(down_img,down_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_black_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN_FILL_BLACK)
+        down_blac_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN_FILL_BLACK)
+        cv2.destroyWindow('down_black_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_black_img_{0}'.format(str(dsize)),cv2.circle(down_black_img,down_blac_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_self_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN_FILL_SELF)
+        down_self_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN_FILL_SELF)
+        cv2.destroyWindow('down_self_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_self_img_{0}'.format(str(dsize)),cv2.circle(down_self_img,down_self_pnt,3,color,3))
+        cv2.waitKey(0)
+        dsize = (400,300)
+        interpolation = None
+        None_img = imResize(img,dsize,interpolation=interpolation)
+        None_pnt = pntResize(pnt_src,img.shape,dsize)
+        cv2.destroyWindow('None_img_{0}'.format(str(dsize)))
+        cv2.imshow('None_img_{0}'.format(str(dsize)),cv2.circle(None_img,None_pnt,3,color,3))
+        cv2.waitKey(0)
+        str_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_STRETCH)
+        str_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_STRETCH)
+        cv2.destroyWindow('str_img_{0}'.format(str(dsize)))
+        cv2.imshow('str_img_{0}'.format(str(dsize)),cv2.circle(str_img,str_pnt,3,color,3))
+        cv2.waitKey(0)
+        up_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDUP)
+        up_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDUP)
+        cv2.destroyWindow('up_img_{0}'.format(str(dsize)))
+        cv2.imshow('up_img_{0}'.format(str(dsize)),cv2.circle(up_img,up_pnt,3,color,3))
+        cv2.waitKey(0)
+        up_crop_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDUP_CROP)
+        up_crop_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDUP_CROP)
+        cv2.destroyWindow('up_crop_img_{0}'.format(str(dsize)))
+        cv2.imshow('up_crop_img_{0}'.format(str(dsize)),cv2.circle(up_crop_img,up_crop_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN)
+        down_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN)
+        cv2.destroyWindow('down_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_img_{0}'.format(str(dsize)),cv2.circle(down_img,down_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_black_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN_FILL_BLACK)
+        down_black_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN_FILL_BLACK)
+        cv2.destroyWindow('down_black_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_black_img_{0}'.format(str(dsize)),cv2.circle(down_black_img,down_black_pnt,3,color,3))
+        cv2.waitKey(0)
+        down_self_img = imResize(img,dsize,interpolation=interpolation,rtype=IMRESIZE_ROUNDDOWN_FILL_SELF)
+        down_self_pnt = pntResize(pnt_src,img.shape,dsize,rtype=IMRESIZE_ROUNDDOWN_FILL_SELF)
+        cv2.destroyWindow('down_self_img_{0}'.format(str(dsize)))
+        cv2.imshow('down_self_img_{0}'.format(str(dsize)),cv2.circle(down_self_img,down_self_pnt,3,color,3))
+        cv2.waitKey(0)
+
 
     #####################################################################
 
@@ -1082,7 +1362,6 @@ if __name__=='__main__':
         opt = parser.parse_args()
 
         # load image to show
-        img_resizer = pb.img.imResizer(pb.img.IMRESIZE_ROUNDUP,user_img_view_size)
         if(opt.img == ''):
             org_img = pb.read_color_ring()
         else:
@@ -1090,7 +1369,7 @@ if __name__=='__main__':
             org_img = cv2.imread(img_path)
             if org_img is None or os.path.isfile(img_path)==False:
                 sys.exit('Can\'t find file: {0}'.format(img_path))
-        img = img_resizer.imResize(org_img) 
+        img = pb.img.imResize(org_img, user_img_view_size, rtype=pb.img.IMRESIZE_ROUNDUP)
 
         # show and run
         key_value = 0
@@ -1127,9 +1406,9 @@ if __name__=='__main__':
 
     #####################################################################
     save_folder_name = 'pyBoost_test_output'
-    # test_imResizer(save_folder_name)
+    test_imResize()
     # test_imshow()
-    test_augment() 
+    # test_augment() 
 
 
 

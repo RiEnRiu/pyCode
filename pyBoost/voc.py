@@ -255,63 +255,30 @@ VOCRESIZE_ROUNDDOWN = pbimg.IMRESIZE_ROUNDDOWN
 VOCRESIZE_ROUNDDOWN_FILL_BLACK = pbimg.IMRESIZE_ROUNDDOWN_FILL_BLACK
 VOCRESIZE_ROUNDDOWN_FILL_SELF = pbimg.IMRESIZE_ROUNDDOWN_FILL_SELF
 
-class vocResizer(pbimg.imResizer):
-    def __init__(self, resize_type, dsize, interpolation):
-        pbimg.imResizer.__init__(self, resize_type, dsize, interpolation)
+def xmlResize(src,img_src_shape,dsize,fx=None,fy=None,rtype=None):
+    dst = src.copy()
+    for obj in dst.objs:
+        obj.xmin,obj.ymin = pbimg.pntResize((obj.xmin,obj.ymin),
+                            img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
+        obj.xmax,obj.ymax = pbimg.pntResize((obj.xmax,obj.ymax),
+                            img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
+    adjust_bndbox(dst)
+    return dst
+    
+def xmlRecover(xml_dst,img_src_shape,dsize,fx=None,fy=None,rtype=None):
+    src = xml_dst.copy()
+    for obj in dst.objs:
+        obj.xmin,obj.ymin = pbimg.pntRecover((obj.xmin,obj.ymin),
+                            img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
+        obj.xmax,obj.ymax = pbimg.pntRecover((obj.xmax,obj.ymax),
+                            img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
+    adjust_bndbox(src)
+    return src
 
-    def xmlResizeInDisk(self, xml_src_path, xml_dst_path, path_replace = None):
-        xml_src_info = xml_read(xml_src_path)
-        xml_dst_info = self.xmlResize(xml_src_info)
-        xml_write(xml_dst_path,xml_dst_info)
-        return
-
-    def xmlResize(self,xml_src_info,path_replace = None):
-        xml_dst_info = xml_src_info.copy()
-        if path_replace is not None:
-            xml_dst_info.path = path_replace
-            xml_dst_info.folder = os.path.basename(os.path.dirname(path_replace))#[part_of_path]/[folder]/[image]
-        # ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(xml_src_info.width, xml_src_info.height)
-        xml_dst_info.width, xml_dst_info.height = param[1]
-        for i,one_bndbox in enumerate(xml_dst_info.objs):
-            one_bndbox.xmin = int(one_bndbox.xmin*param[2][0]+param[2][1])
-            one_bndbox.ymin = int(one_bndbox.ymin*param[3][0]+param[3][1])
-            one_bndbox.xmax = int(one_bndbox.xmax*param[2][0]+param[2][1])
-            one_bndbox.ymax = int(one_bndbox.ymax*param[3][0]+param[3][1])
-        #must check bndboxes range
-        #must be in [1,w-1] and [1,h-1]
-        adjust_bndbox(xml_dst_info)
-        if len(xml_dst_info.objs)==0:
-            msg = 'There is no object after resized: {0}'.format(xml_dst_info.filename)
-            print(msg)
-        return xml_dst_info
-
-    def xmlRecoverInDisk(self, xml_dst_path, xml_src_path, im_src_shape, path_replace = None):
-        xml_dst_info = xml_read(xml_dst_path)
-        xml_src_info = self.xmlRecover(xml_dst_info, im_src_shape, path_replace)
-        xml_write(xml_src_path, xml_src_info)
-        return
-
-    def xmlRecover(self,xml_dst_info, im_src_shape, path_replace = None):
-        xml_src_info = xml_dst_info.copy()
-        if path_replace is not None:
-            xml_src_info.path = path_replace
-            xml_src_info.folder = os.path.basename(os.path.dirname(path_replace))#[part_of_path]/[folder]/[image]
-        xml_src_info.width, xml_src_info.height = im_src_shape[1], im_src_shape[0]
-        # ((cv_w, cv_h), (save_w,save_h), (fx, bx), (fy, by))
-        param = self._transParam(xml_src_info.width, xml_src_info.height)
-        for i,one_bndbox in enumerate(xml_src_info.objs):
-            one_bndbox.xmin = int((one_bndbox.xmin-param[2][1])/param[2][0])
-            one_bndbox.ymin = int((one_bndbox.ymin-param[3][1])/param[3][0])
-            one_bndbox.xmax = int((one_bndbox.xmax-param[2][1])/param[2][0])
-            one_bndbox.ymax = int((one_bndbox.ymax-param[3][1])/param[3][0])
-        #must check bndboxes range
-        #must be in [1,w-1] and [1,h-1]
-        adjust_bndbox(xml_src_info)
-        if len(xml_src_info.objs)==0:
-            msg = 'There is no object after resized: {0}'.format(xml_src_info.filename)
-            print(msg)
-        return xml_src_info
+def vocResize(img_src,xml_src,dsize,fx=None,fy=None,interpolation=None,rtype=None):
+    img_dst = pbimg.imResize(img_src,dsize,fx=fx,fy=fy,interpolation=interpolation,rtype=rtype)
+    xml_dst = xmlResize(xml_src,img_src.shape,dsize,fx=fx,fy=fy,rtype=rtype)
+    return img_dst,xml_dst
 
 #"dets_file" is pickle file with each dump [["xmlName" "label" "confidence" "x_min" "y_min" "x_max" "y_max"],...]
 class vocEvaluator:

@@ -255,12 +255,17 @@ VOCRESIZE_ROUNDDOWN = pbimg.IMRESIZE_ROUNDDOWN
 VOCRESIZE_ROUNDDOWN_FILL_BLACK = pbimg.IMRESIZE_ROUNDDOWN_FILL_BLACK
 VOCRESIZE_ROUNDDOWN_FILL_SELF = pbimg.IMRESIZE_ROUNDDOWN_FILL_SELF
 
+
+imResize = pbimg.imResize
+pntResize = pbimg.pntResize
+pntRecover = pbimg.pntRecover
+
 def xmlResize(src,img_src_shape,dsize,fx=None,fy=None,rtype=None):
     dst = src.copy()
     for obj in dst.objs:
-        obj.xmin,obj.ymin = pbimg.pntResize((obj.xmin,obj.ymin),
+        obj.xmin,obj.ymin = pntResize((obj.xmin,obj.ymin),
                             img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
-        obj.xmax,obj.ymax = pbimg.pntResize((obj.xmax,obj.ymax),
+        obj.xmax,obj.ymax = pntResize((obj.xmax,obj.ymax),
                             img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
     adjust_bndbox(dst)
     return dst
@@ -268,15 +273,15 @@ def xmlResize(src,img_src_shape,dsize,fx=None,fy=None,rtype=None):
 def xmlRecover(xml_dst,img_src_shape,dsize,fx=None,fy=None,rtype=None):
     src = xml_dst.copy()
     for obj in dst.objs:
-        obj.xmin,obj.ymin = pbimg.pntRecover((obj.xmin,obj.ymin),
+        obj.xmin,obj.ymin = pntRecover((obj.xmin,obj.ymin),
                             img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
-        obj.xmax,obj.ymax = pbimg.pntRecover((obj.xmax,obj.ymax),
+        obj.xmax,obj.ymax = pntRecover((obj.xmax,obj.ymax),
                             img_src_shape,dsize,fx=fx,fy=fy,rtype=rtype)
     adjust_bndbox(src)
     return src
 
 def vocResize(img_src,xml_src,dsize,fx=None,fy=None,interpolation=None,rtype=None):
-    img_dst = pbimg.imResize(img_src,dsize,fx=fx,fy=fy,interpolation=interpolation,rtype=rtype)
+    img_dst = imResize(img_src,dsize,fx=fx,fy=fy,interpolation=interpolation,rtype=rtype)
     xml_dst = xmlResize(xml_src,img_src.shape,dsize,fx=fx,fy=fy,rtype=rtype)
     return img_dst,xml_dst
 

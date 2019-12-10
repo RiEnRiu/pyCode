@@ -27,19 +27,15 @@ import os
 import sys
 import voc as pbvoc
 
-#from scipy.optimize import linear_sum_assignment
-from sklearn.utils.linear_assignment_ import linear_assignment
+from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
-from color_ring import read_color_ring
+import color_ring
 
 class KalmanBoxTracker:
     """
     This class represents the internel state of individual tracked objects observed as bbox.
     """
-    count = 0
-    maxsize = sys.maxsize-1000
-    id_lock = threading.Lock()
-    def __init__(self,bbox,id=None):
+    def __init__(self,bbox,tid):
         """
         Initialises a tracker using initial bounding box.
         """
@@ -54,22 +50,14 @@ class KalmanBoxTracker:
         self.kf.Q[-1,-1] *= 0.01
         self.kf.Q[4:,4:] *= 0.01
 
-        self._pre_z = self._convert_bbox_to_z(bbox)
+        self._pre_z = KalmanBoxTracker._convert_bbox_to_z(bbox)
         self.kf.x[:4] = self._pre_z
 
-        if id is None:
-            KalmanBoxTracker.id_lock.acquire()
-            self.id = KalmanBoxTracker.count
-            KalmanBoxTracker.count += 1
-            if KalmanBoxTracker.count>KalmanBoxTracker.maxsize:
-                KalmanBoxTracker.count = 0
-            KalmanBoxTracker.id_lock.release()
-        else:
-            self.id = id
-        self.predict_time_since_update = 0
-        self.update_time_since_predict = 0
+        self.tid = tid
+        self.predict_times_since_update = 0
+        self.update_times_since_predict = 0
 
-    def _convert_bbox_to_z(self,bbox):
+    def _convert_bbox_to_z(bbox):
         """
         Takes a bounding box in the form [x1,y1,x2,y2] and returns z in the form
           [x,y,s,r] where x,y is the centre of the box and s is the scale/area and r is
@@ -83,7 +71,7 @@ class KalmanBoxTracker:
         r = w / h
         return np.array([x,y,s,r]).reshape((4,1))
 
-    def _convert_x_to_bbox(self,x):
+    def _convert_x_to_bbox(x):
         """
         Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
           [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
@@ -96,9 +84,9 @@ class KalmanBoxTracker:
         """
         Updates the state vector with observed bbox.
         """
-        self.predict_time_since_update = 0
-        self.update_time_since_predict += 1    
-        self._pre_z = self._convert_bbox_to_z(bbox)
+        self.predict_times_since_update = 0
+        self.update_times_since_predict += 1    
+        self._pre_z = KalmanBoxTracker._convert_bbox_to_z(bbox)
         self.kf.update(self._pre_z)
         return
     
@@ -109,53 +97,49 @@ class KalmanBoxTracker:
         if (self.kf.x[6] + self.kf.x[2]) <= 0:
             self.kf.x[6] *= 0.0
         self.kf.predict()
-        self.update_time_since_predict = 0
-        self.predict_time_since_update += 1
-        return self._convert_x_to_bbox(self.kf.x)
+        self.update_times_since_predict = 0
+        self.predict_times_since_update += 1
+        return KalmanBoxTracker._convert_x_to_bbox(self.kf.x)
 
     def stay(self):
         self.kf.update(self._pre_z)
         return 
 
-    #def get_predict(self):
-    #    """
-    #    Returns the current bounding box estimate.
-    #    """
-    #    return self._convert_x_to_bbox(self.kf.x)
-
-
-def _associate_detections_to_predictions(detections,predictions,iou_threshold):
-    """
-    Assigns detections to tracked object (both represented as bounding boxes)
-    Returns a list of matches_pairs
-    """
-
-    if len(predictions) == 0 or len(detections) == 0:
-        return np.empty((0,2),dtype=np.int32)
-
-    iou_matrix = pbvoc.exIouMatrix(detections,predictions)
-
-    matched_pairs = sklearn.utils.linear_assignment_.linear_assignment(-iou_matrix)
-    
-    #del low IOU
-    matches = []
-    for m in matched_pairs:
-        if iou_matrix[m[0],m[1]] < iou_threshold:
-            matches.append(False)
-        else:
-            matches.append(True)
-    return matched_pairs[matches].reshape(-1,2)
-
 class Sort():
-    def __init__(self,max_loss_times=3,iou_thresh=-0.15,max_num_trks=0):
+    def __init__(self,max_loss_times=3,iou_thresh=-0.15,max_num_trks=0,begin_id=1000):
         """
         Sets key parameters for SORT
         """
         self._max_loss_times = max_loss_times
         self._iou_thresh = iou_thresh
         self._max_num_trks = max_num_trks
+        self._new_tracker_id = begin_id
         #self._trackers = [KalmanBoxTracker()]*0
         self._trackers = list()
+
+
+    def _associate_detections_to_predictions(detections,predictions,iou_threshold):
+        """
+        Assigns detections to tracked object (both represented as bounding boxes)
+        Returns a list of matches_pairs
+        """
+
+        if len(predictions) == 0 or len(detections) == 0:
+            return np.empty((0,2),dtype=np.int32)
+
+        iou_matrix = pbvoc.gIouMatrix(detections,predictions)
+
+        matched_pairs = np.array(linear_sum_assignment(-iou_matrix)).transpose((1, 0))
+    
+        #del low IOU
+        matches = []
+        for m in matched_pairs:
+            if iou_matrix[m[0],m[1]] < iou_threshold:
+                matches.append(False)
+            else:
+                matches.append(True)
+        return matched_pairs[matches].reshape(-1,2)
+
 
     def update(self,dets):
         """
@@ -183,7 +167,7 @@ class Sort():
             preds_to_match = np.empty((0,4),dtyep=np.int)
         else:
             preds_to_match = np.array(preds,np.int)
-        matched_pairs = _associate_detections_to_predictions(dets_to_match,preds_to_match,self._iou_thresh)
+        matched_pairs = Sort._associate_detections_to_predictions(dets_to_match,preds_to_match,self._iou_thresh)
 
         # update matched tracker
         for i_d, i_p in matched_pairs:
@@ -197,7 +181,7 @@ class Sort():
         # delete tracker over loss times
         for t in range(len(self._trackers)-1,-1,-1):
             trk = self._trackers[t]
-            if trk.predict_time_since_update>self._max_loss_times:
+            if trk.predict_times_since_update>self._max_loss_times:
                 self._trackers.pop(t)
                 preds.pop(t)
 
@@ -205,7 +189,8 @@ class Sort():
         unmatched_i_d = np.where(dets_id == -1)[0]
         if self._max_num_trks<=0:
             for i in unmatched_i_d:
-                trk = KalmanBoxTracker(dets_to_match[i,:])
+                trk = KalmanBoxTracker(dets_to_match[i,:],self._new_tracker_id)
+                self._new_tracker_id += 1
                 self._trackers.append(trk)
                 dets_id[i] = trk.id
         elif self._max_num_trks>0:
@@ -213,7 +198,8 @@ class Sort():
             len_unmatched_i_d = 0
             delta = self._max_num_trks - len(self._trackers)
             while i<len_unmatched_i_d and delta>0:
-                trk = KalmanBoxTracker(dets_to_match[i,:])
+                trk = KalmanBoxTracker(dets_to_match[i,:],self._new_tracker_id)
+                self._new_tracker_id += 1
                 self._trackers.append(trk)
                 dets_id[i] = trk.id 
                 i += 1
@@ -226,7 +212,7 @@ class Sort():
                 
     def stay_unmatched(self):
         for trk in self._trackers:
-            if trk.predict_time_since_update>0:
+            if trk.predict_times_since_update>0:
                 trk.stay()
         return 
 
@@ -468,7 +454,7 @@ _ncols = _colorwheel_RY + _colorwheel_YG + _colorwheel_GC \
     +_colorwheel_CB + _colorwheel_BM + _colorwheel_MR 
 
 # _colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png'))
-_colorRing = read_color_ring()
+_colorRing = color_ring.read()
 
 #class calcOpticalFlow:
 #    def flowToColor(flow,maxmotion=0):
@@ -635,14 +621,6 @@ def drawOpticalFlow(img,flow,stride = 10):
 def colorRing():
     global _colorRing
     return _colorRing
-
-
-
-
-
-
-
-
 
 if __name__=='__main__':
 

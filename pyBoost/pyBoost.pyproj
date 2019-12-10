@@ -28,9 +28,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="color_ring.py" />
-    <Compile Include="feature_tracker.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="pyBoost_base.py">
       <SubType>Code</SubType>
     </Compile>

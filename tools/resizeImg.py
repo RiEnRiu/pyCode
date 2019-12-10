@@ -73,9 +73,10 @@ def resize_voc(args):
             img = cv2.imread(imgrp,cv2.IMREAD_UNCHANGED,ncols=55)
             if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
                 continue
-            rimg = voc_rszr.imResize(img)
+            xml = pb.voc.xml_read(xmlrp)
+            rimg, rxml = pb.voc.vocResize(img,xml,wh,interpolation=args.inter,rtype=args.rtype)
             cv2.imwrite(imgsp,rimg)
-            voc_rszr.xmlResizeInDisk(xmlrp,xmlsp)
+            pb.voc.xml_write(xmlsp,rxml)
     # save in another folder
     else:
         save_jpg_dir = os.path.join(args.save,'JPEGImages')

@@ -892,7 +892,7 @@ if __name__=='__main__':
     import pyBoost as pb
 
     def test_imResize():
-        img = pb.color_ring.read_color_ring()
+        img = pb.color_ring.read()
         pnt_src = (random.randint(0,img.shape[1]-1),random.randint(0,img.shape[0]-1))
         cv2.destroyWindow('img')
         cv2.imshow('img',cv2.circle(img.copy(),pnt_src,3,(0,0,0),3))

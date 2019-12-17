@@ -1,20 +1,6 @@
-﻿pyBoost      IOThread重写
-imBoost      imResizer多线程不安全,imResizer工厂重写
+﻿pyBoost      flowToColor加速，VideoCaptureThread使用usb摄像头没有自动释放
 
-pyBoost      flowToColor加速，VideoCaptureThread使用usb摄像头没有自动释放，Resizer多线程不安全
-vocBoost     Resizer多线程不安全
-pyBoost      waitKey在高FPS下不起作用
-
-
-balanceVOC       统计速度和计算速度
-cvAugmentor      扭曲和图像金字塔，待编码
-pyAugmentor      添加注释，step0的图像处理（消减背景色相，mask估计alpha）
 pyFusion         tf改回cpu版本，使用pyBoost接口
 pyFusion_recode  
 pyFusion_tf      与pyFusion合并成一个版本，暴露更多参数接口，使用pyBoost接口, 改bug:max = size + min - 1，min=1
 tf_mix_one.py    变成pyFusion的函数，选择gpu或cpu模式
-
-
-
-kalman_tracker    封装和测试
-sort              封装和增加接口

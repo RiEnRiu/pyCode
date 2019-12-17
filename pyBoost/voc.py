@@ -25,8 +25,6 @@
 
 
 import xml.etree.ElementTree as ET
-import pyBoost_base as pbb
-import img as pbimg
 import os
 import random
 import numpy as np
@@ -35,6 +33,9 @@ import cv2
 
 from scipy.optimize import linear_sum_assignment
 
+import pyBoost as pb
+# import pyBoost.pyBoost_base as pbb
+# import pyBoost.img as pbimg
 
 
 class bndbox():
@@ -78,7 +79,7 @@ class bndbox():
             raise IndexError('bndbox out of range')
 
     def tocvRect(self):
-        return pbimg.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)
+        return pb.img.cvRect(self.xmin,self.ymin,self.xmax-self.xmin+1,self.ymax-self.ymin+1)
 
     def copy(self):
         return bndbox(_xmin=self.xmin,_ymin=self.ymin,\
@@ -248,17 +249,17 @@ def adjust_bndbox(xml_info):
             xml_info.objs.pop(i)
     return no_change
 
-VOCRESIZE_STRETCH = pbimg.IMRESIZE_STRETCH
-VOCRESIZE_ROUNDUP = pbimg.IMRESIZE_ROUNDUP
-VOCRESIZE_ROUNDUP_CROP = pbimg.IMRESIZE_ROUNDUP_CROP
-VOCRESIZE_ROUNDDOWN = pbimg.IMRESIZE_ROUNDDOWN
-VOCRESIZE_ROUNDDOWN_FILL_BLACK = pbimg.IMRESIZE_ROUNDDOWN_FILL_BLACK
-VOCRESIZE_ROUNDDOWN_FILL_SELF = pbimg.IMRESIZE_ROUNDDOWN_FILL_SELF
+VOCRESIZE_STRETCH = pb.img.IMRESIZE_STRETCH
+VOCRESIZE_ROUNDUP = pb.img.IMRESIZE_ROUNDUP
+VOCRESIZE_ROUNDUP_CROP = pb.img.IMRESIZE_ROUNDUP_CROP
+VOCRESIZE_ROUNDDOWN = pb.img.IMRESIZE_ROUNDDOWN
+VOCRESIZE_ROUNDDOWN_FILL_BLACK = pb.img.IMRESIZE_ROUNDDOWN_FILL_BLACK
+VOCRESIZE_ROUNDDOWN_FILL_SELF = pb.img.IMRESIZE_ROUNDDOWN_FILL_SELF
 
 
-imResize = pbimg.imResize
-pntResize = pbimg.pntResize
-pntRecover = pbimg.pntRecover
+imResize = pb.img.imResize
+pntResize = pb.img.pntResize
+pntRecover = pb.img.pntRecover
 
 def xmlResize(src,img_src_shape,dsize,fx=None,fy=None,rtype=None):
     dst = src.copy()
@@ -307,7 +308,7 @@ class vocEvaluator:
     def __load_dets(self,dets_file):
         print('Load detections...')
         if dets_file[-4:]=='.txt':
-            out_dets_list = [[x[0],x[1],float(x[2]),int(x[3]),int(x[4]),int(x[5]),int(x[6])] for x in pbb.scan_text(dets_file)]
+            out_dets_list = [[x[0],x[1],float(x[2]),int(x[3]),int(x[4]),int(x[5]),int(x[6])] for x in pb.scan_text(dets_file)]
             out_dets_cls_name = list(set([x[1] for x in out_dets_list]))
             out_dets_img_name = list(set([x[0] for x in out_dets_list]))
         else:
@@ -362,7 +363,7 @@ class vocEvaluator:
                 recs = pickle.load(f)
         else:
             # load annots
-            anno_name_list = pbb.scan_file(annotations_path,'.xml',False,True)
+            anno_name_list = pb.scan_file(annotations_path,'.xml',False,True)
             recs = {}
             print('Reading annotations... ')
             p_vocXmlIO = vocXmlIO([os.path.join(annotations_path,x) for x in anno_name_list],False,3000)
@@ -763,7 +764,7 @@ def exIouMatrix(bbs1,bbs2):
 #ONECLASS: if 'detFile' have no 'class', you can set 'class' by this parameter
 def detToXml(detFile,imgPath,savePath,HAVEEXT=True,ONECLASS=''):
     imgFolder = os.path.split(imgPath)[1]
-    detFileInfo = pbb.scan_text(detFile)
+    detFileInfo = pb.scan_text(detFile)
 
     boxes_dict = {}
     if ONECLASS=='':

@@ -1,8 +1,6 @@
 #-*-coding:utf-8-*-
-import os
-import sys
-from .pyBoost_base import *
-from .color_ring import *
-import img
-import voc
-import video
+from pyBoost.pyBoost_base import *
+from pyBoost.color_ring import *
+import pyBoost.img
+import pyBoost.voc
+import pyBoost.video

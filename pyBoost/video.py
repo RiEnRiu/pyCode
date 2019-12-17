@@ -25,11 +25,12 @@ import threading
 import time
 import os
 import sys
-import voc as pbvoc
-
 from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
-import color_ring
+
+import pyBoost as pb
+#import pyBoost.voc as pbvoc
+#import pyBoost.color_ring as pb_color_ring
 
 class KalmanBoxTracker:
     """
@@ -127,7 +128,7 @@ class Sort():
         if len(predictions) == 0 or len(detections) == 0:
             return np.empty((0,2),dtype=np.int32)
 
-        iou_matrix = pbvoc.gIouMatrix(detections,predictions)
+        iou_matrix = pb.voc.gIouMatrix(detections,predictions)
 
         matched_pairs = np.array(linear_sum_assignment(-iou_matrix)).transpose((1, 0))
     
@@ -454,7 +455,8 @@ _ncols = _colorwheel_RY + _colorwheel_YG + _colorwheel_GC \
     +_colorwheel_CB + _colorwheel_BM + _colorwheel_MR 
 
 # _colorRing = cv2.imread(os.path.join(os.path.dirname(__file__), 'colorRing.png'))
-_colorRing = color_ring.read()
+# _colorRing = pb_color_ring.read_color_ring()
+_colorRing = pb.read_color_ring()
 
 #class calcOpticalFlow:
 #    def flowToColor(flow,maxmotion=0):

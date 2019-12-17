@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-def read():
+def read_color_ring():
     encoded_mat = [\
         [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82],\
         [0, 0, 0, 151, 0, 0, 0, 151, 8, 2, 0, 0, 0, 151, 253, 94],\
@@ -1434,7 +1434,7 @@ def read():
     return cv2.imdecode(encoded_img,cv2.IMREAD_UNCHANGED)
 
 
-def write(file_path='colorRing.png'):
+def export_color_ring(file_path='colorRing.png'):
     return cv2.imwrite(file_path, read_color_ring())
 
 

@@ -26,7 +26,9 @@ def resize_img_only(args):
         file_relative = pb.deep_scan_file(args.dir, img_exts, False,True)
 
     wh = tuple(json.loads(args.wh))
-    im_rszr = pb.img.imResizer(args.rtype,wh,args.inter)
+    rtype = args.rtype
+    inter = args.inter
+    #im_rszr = pb.img.imResizer(args.rtype,wh,)
     read_img_list = [os.path.join(args.dir,x) for x in file_relative]
     # save in local and cover files
     if(args.save is None):
@@ -34,7 +36,8 @@ def resize_img_only(args):
             img = cv2.imread(read_path,cv2.IMREAD_UNCHANGED)
             if img.shape[1]==wh[0] and img.shape[0] == wh[1]:
                 continue
-            rimg = im_rszr.imResize(img)
+            rimg = pb.img.imResize(img,wh,interpolation=inter,rtype=rtype)
+            #rimg = im_rszr.imResize(img)
             cv2.imwrite(read_path,rimg)
     # save in another folder
     else:
@@ -46,7 +49,8 @@ def resize_img_only(args):
                 rimg = img
                 shutil.copy(read_path,save_path)
             else:
-                rimg = im_rszr.imResize(img)
+                rimg = pb.img.imResize(img,wh,interpolation=inter,rtype=rtype)
+                #rimg = im_rszr.imResize(img)
                 cv2.imwrite(save_path,rimg)
     return 
 

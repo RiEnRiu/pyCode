@@ -9,6 +9,7 @@ import cv2
 import argparse
 import json
 import multiprocessing
+import time
 
 def decode_one_video(param):
     video_path = param[0]
@@ -16,14 +17,13 @@ def decode_one_video(param):
     begin_index = param[2]
     ext = param[3]
     img_resizer_param = param[4]
-    if img_resizer_param is None:
-        img_resizer = None
-    else:
-        rtype = img_resizer_param['rtype']
-        dsize = img_resizer_param['dsize']
-        interpolation = img_resizer_param['interpolation']
-        img_resizer = pb.img.imResizer(rtype,dsize,interpolation)
-
+    #if img_resizer_param is None:
+    #    img_resizer = None
+    #else:
+    #    rtype = img_resizer_param['rtype']
+    #    dsize = img_resizer_param['dsize']
+    #    interpolation = img_resizer_param['interpolation']
+    #    img_resizer = pb.img.imResizer(rtype,dsize,interpolation)
     video_full_name = os.path.basename(video_path)
     video_front_name,_ = pb.splitext(video_full_name)
     save_full_name = video_front_name+'_{0}'+ext
@@ -36,8 +36,15 @@ def decode_one_video(param):
         ret,img = cap.read()
         while ret:
             save_path = common_save_path.format(index)
-            if img_resizer is not None:
-                img = img_resizer.imResize(img)
+            if img_resizer_param is None:
+                pass
+            else:
+                dsize = img_resizer_param['dsize']
+                interpolation = img_resizer_param['interpolation']
+                rtype = img_resizer_param['rtype']
+                img = pb.img.imResize(img,dsize,interpolation=interpolation,rtype=rtype)
+            #if img_resizer is not None:
+            #    img = img_resizer.imResize(img)
             cv2.imwrite(save_path,img)
             ret,img = cap.read()
             index += 1
@@ -100,8 +107,8 @@ if __name__=='__main__':
 
     # img_resizer_params
     one_param = None if args.wh is None else\
-                {'rtyep':args.rtype,\
-                     'dsize':json.loads(args.wh),\
+                {'rtype':args.rtype,\
+                     'dsize':tuple(json.loads(args.wh)),\
                      'interpolation':args.inter}
     for param in multi_param:
         param.append(one_param)
@@ -109,7 +116,7 @@ if __name__=='__main__':
     # multiprocessing
     num_process = min(args.process, int(multiprocessing.cpu_count())-1)
     num_process = min(len(multi_param),num_process)
-    import time
+
     begin = time.time()
     if num_process<=1:
         for one_param in multi_param:

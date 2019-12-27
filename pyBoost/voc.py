@@ -34,9 +34,6 @@ import cv2
 from scipy.optimize import linear_sum_assignment
 
 import pyBoost as pb
-# import pyBoost.pyBoost_base as pbb
-# import pyBoost.img as pbimg
-
 
 class bndbox():
     def __init__(self, _xmin, _ymin, _xmax, _ymax):
@@ -859,9 +856,10 @@ if __name__=='__main__':
             if img is None:
                 img = np.zeros((user_img_view_size[1],user_img_view_size[0],3),np.uint8)
             elif img.shape!=user_img_view_size:
-                img = pb.img.imResizer(pb.img.IMRESIZE_ROUNDDOWN,\
-                                        user_img_view_size).\
-                                        imResize(img)
+                img = pb.img.imResize(img,user_img_view_size,rtype=pb.img.IMRESIZE_ROUNDDOWN)
+                #img = pb.img.imResizer(pb.img.IMRESIZE_ROUNDDOWN,\
+                #                        user_img_view_size).\
+                #                        imResize(img)
 
         # global data
         global_data = {}

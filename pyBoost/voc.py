@@ -696,6 +696,43 @@ def bndboxGIou(bb1,bb2):
 
     return inters/uni - (areaC-uni)/areaC
 
+def bndboxPR(bb1,bb2):
+    xc1,yc1 = (bb1[0]+bb1[2])/2,(bb1[1]+bb1[3])/2
+    xc2,yc2 = (bb2[0]+bb2[2])/2,(bb2[1]+bb2[3])/2
+    w1,h1 = bb1[2]-bb1[0],bb1[3]-bb1[1]
+    w2,h2 = bb2[2]-bb2[0],bb2[3]-bb2[1]
+    mw,mh = (w1+w2)/2,(h1+h2)/2
+    dx,dy = xc2-xc1,yc2-yc1
+    kw = w2/w1
+    kh = h2/h1
+    r = ((dx/mw)**2+(dy/mh)**2+(kw-kh)**2)**0.5
+    return r
+    
+
+
+    ixmin = max(bb1[0], bb2[0])
+    iymin = max(bb1[1], bb2[1])
+    ixmax = min(bb1[2], bb2[2])
+    iymax = min(bb1[3], bb2[3])
+    iw = ixmax - ixmin + 1
+    ih = iymax - iymin + 1
+    s1 = bndboxArea(bb1)
+    s2 = bndboxArea(bb2)
+    all = bndboxArea([min(bb1[0],bb2[0]),\
+                    min(bb1[1],bb2[1]),\
+                    max(bb1[2],bb2[2]),\
+                    max(bb1[3],bb2[3])])
+    if iw<0 or ih<0:
+        inter =  int(-abs(iw*ih))
+    else:
+        inter = iw*ih
+    c = (all - (s1 + s2 - inter)) / 2
+    return (c-inter)/(all-c)
+        
+
+    
+
+
 def gIouMatrix(bbs1,bbs2):
     bbs1_area = [bndboxArea(x) for x in bbs1]
     bbs2_area = [bndboxArea(x) for x in bbs2]
@@ -892,18 +929,23 @@ if __name__=='__main__':
                 iou_value = float(pb.voc.bndboxIou(target_box,predict_box))
                 exiou_value = float(pb.voc.bndboxExIou(target_box,predict_box))
                 giou_value = float(pb.voc.bndboxGIou(target_box,predict_box))
+                PR_value = float(pb.voc.bndboxPR(target_box,predict_box))
                 iou_str = 'iou = {0:5.4}'.format(iou_value)
                 exiou_str = 'exiou = {0:5.4}'.format(exiou_value)
                 giou_str = 'giou = {0:5.4}'.format(giou_value)
+                PR_str = 'PR = {0:5.4}'.format(PR_value)
                 y_bias = 30
                 iou_p = (int(predict_box[0]*0.9+predict_box[2]*0.1),int(predict_box[1]*0.8+predict_box[3]*0.2))
                 exiou_p = (iou_p[0],iou_p[1]+y_bias)
                 giou_p = (exiou_p[0],exiou_p[1]+y_bias)
+                PR_p = (giou_p[0],giou_p[1]+y_bias)
                 cv2.putText(img, iou_str, iou_p, \
                             cv2.FONT_HERSHEY_COMPLEX,0.5,(0,255,0),1)
                 cv2.putText(img, exiou_str, exiou_p, \
                             cv2.FONT_HERSHEY_COMPLEX,0.5, (0,255,0),1)
                 cv2.putText(img, giou_str, giou_p, \
+                            cv2.FONT_HERSHEY_COMPLEX,0.5, (0,255,0),1)
+                cv2.putText(img, PR_str, PR_p, \
                             cv2.FONT_HERSHEY_COMPLEX,0.5, (0,255,0),1)
             return
 

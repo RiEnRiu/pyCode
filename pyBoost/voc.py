@@ -30,6 +30,7 @@ import random
 import numpy as np
 import pickle
 import cv2
+import math
 
 from scipy.optimize import linear_sum_assignment
 
@@ -223,6 +224,54 @@ def xml_write(filename,vocxml_info):
             print('Error while saving \"{0}\"'.format(filename))
             flag = False
     return flag
+
+def voc2coco(voc_xml_paths, info=None, licenses=None):
+    r = {}
+    if info is not None:
+        r['info'] = info
+    if licenses is not None:
+        r['licenses'] = licenses
+    images = []
+    annotations = []
+    categories = []
+    
+    name_to_id = {}
+    for img_id,v_path in enumerate(voc_xml_paths):
+        file_name = os.path.basename(os.path.abspath(v_path))
+        voc_xml = xml_read(v_path)
+        # img.keys() = {'coco_url','data_captured','file_name', \
+        #               'filckr_url', 'id', 'height', 'width', 'license'}
+        img = {'file_name':file_name,'id':img_id,'license':1,
+               'height':voc_xml.height,'width':voc_xml.width}
+        images.append(img)
+        for obj in voc_xml.objs:
+            anno = {}
+            name = obj.name
+            cate_id = name_to_id.get(name)
+            if cate_id is None:
+                cate_id = len(name_to_id)+1
+                name_to_id[name] = cate_id
+            anno['id'] = len(annotations)+1
+            anno['image_id'] = img_id
+            anno['category_id'] = cate_id
+            anno['iscrowd'] = 0
+            x0,y0,x1,y1 = obj.xmin,obj.ymin,obj.xmax,obj.ymax
+            anno['segmentation'] = [[x0,y0,x0,y1,x1,y1,x1,y0]]
+            w,h = x1-x0+1,y1-y0+1
+            anno['area'] = float(w*h)
+            anno['bbox'] = [x0,y0,w,h]
+            annotations.append(anno)
+    for name, cate_id in name_to_id.items():
+        categories.append({'id':cate_id,'name':name,'supercategory':name})
+
+    r['images'] = images
+    r['annotations'] = annotations
+    r['categories'] = categories
+    return r
+
+
+
+
 
 #inplace
 #return True if nothing is changed
@@ -696,39 +745,31 @@ def bndboxGIou(bb1,bb2):
 
     return inters/uni - (areaC-uni)/areaC
 
-def bndboxPR(bb1,bb2):
-    xc1,yc1 = (bb1[0]+bb1[2])/2,(bb1[1]+bb1[3])/2
-    xc2,yc2 = (bb2[0]+bb2[2])/2,(bb2[1]+bb2[3])/2
+def bndbox_iou_test(bb1,bb2):
     w1,h1 = bb1[2]-bb1[0],bb1[3]-bb1[1]
     w2,h2 = bb2[2]-bb2[0],bb2[3]-bb2[1]
-    mw,mh = (w1+w2)/2,(h1+h2)/2
-    dx,dy = xc2-xc1,yc2-yc1
-    kw = w2/w1
-    kh = h2/h1
-    r = ((dx/mw)**2+(dy/mh)**2+(kw-kh)**2)**0.5
-    return r
     
 
+    xc1,yc1 = (bb1[0]+bb1[2])/2,(bb1[1]+bb1[3])/2
+    xc2,yc2 = (bb2[0]+bb2[2])/2,(bb2[1]+bb2[3])/2
+    
+    xmin = min(bb1[0],bb2[0])
+    ymin = min(bb1[1],bb2[1])
+    xmax = max(bb1[2],bb2[2])
+    ymax = max(bb1[3],bb2[3])
+ 
+    psqur = ((xc1-xc2)**2+(yc1-yc2)**2)
+    csqur = ((xmax-xmin)**2+(ymax-ymin)**2)
+    
+    iou = bndboxIou(bb1,bb2)
 
-    ixmin = max(bb1[0], bb2[0])
-    iymin = max(bb1[1], bb2[1])
-    ixmax = min(bb1[2], bb2[2])
-    iymax = min(bb1[3], bb2[3])
-    iw = ixmax - ixmin + 1
-    ih = iymax - iymin + 1
-    s1 = bndboxArea(bb1)
-    s2 = bndboxArea(bb2)
-    all = bndboxArea([min(bb1[0],bb2[0]),\
-                    min(bb1[1],bb2[1]),\
-                    max(bb1[2],bb2[2]),\
-                    max(bb1[3],bb2[3])])
-    if iw<0 or ih<0:
-        inter =  int(-abs(iw*ih))
-    else:
-        inter = iw*ih
-    c = (all - (s1 + s2 - inter)) / 2
-    return (c-inter)/(all-c)
-        
+    v = 4/math.pi/math.pi*(math.atan(w1/h1)-math.atan(w2/h2))**2
+
+    a = v/(1-iou)+v
+    
+
+    return 1-iou+psqur/csqur+a*v
+
 
     
 
@@ -852,6 +893,15 @@ if __name__=='__main__':
     sys.path.append('../')
     import pyBoost as pb
 
+    #import json
+    #voc_xml_paths = pb.scan_file(r'G:\share\200_5\Annotations','.xml')
+    #jj = voc2coco(voc_xml_paths)
+    #print(jj)
+    #with open(r'G:\share\200_5\instances_train2017.json','w') as fp:
+    #    json.dump(jj,fp,indent=4,sort_keys=True)
+    #sys.exit()
+
+
     def test_adjust_bndbox():
         read_path = r'E:\fusion\frcnn_hand'
         xml_file_name = pb.deep_scan_file(read_path,'.xml',False,True)
@@ -929,11 +979,11 @@ if __name__=='__main__':
                 iou_value = float(pb.voc.bndboxIou(target_box,predict_box))
                 exiou_value = float(pb.voc.bndboxExIou(target_box,predict_box))
                 giou_value = float(pb.voc.bndboxGIou(target_box,predict_box))
-                PR_value = float(pb.voc.bndboxPR(target_box,predict_box))
+                PR_value = float(pb.voc.bndbox_iou_test(target_box,predict_box))
                 iou_str = 'iou = {0:5.4}'.format(iou_value)
                 exiou_str = 'exiou = {0:5.4}'.format(exiou_value)
                 giou_str = 'giou = {0:5.4}'.format(giou_value)
-                PR_str = 'PR = {0:5.4}'.format(PR_value)
+                PR_str = 'test = {0:5.4}'.format(PR_value)
                 y_bias = 30
                 iou_p = (int(predict_box[0]*0.9+predict_box[2]*0.1),int(predict_box[1]*0.8+predict_box[3]*0.2))
                 exiou_p = (iou_p[0],iou_p[1]+y_bias)
@@ -1060,4 +1110,10 @@ if __name__=='__main__':
     #test_vocEvaluator(save_folder_name)
     #test_detToXml(save_folder_name)
     test_boxiou()
+
+
+
+
+        
+    
 

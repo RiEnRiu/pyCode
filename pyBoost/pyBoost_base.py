@@ -9,12 +9,48 @@ import numpy as np
 import json
 import pickle
 
-
 def scan_folder(scanned_dir):
     if os.path.isdir(scanned_dir) == False:
         raise ValueError('It is not valid path: '+scanned_dir)
         return []
     return [x for x in os.listdir(scanned_dir) if os.path.isdir(os.path.join(scanned_dir,x))]
+
+def deep_scan_folder(scanned_dir,with_root_dir=True):
+    if os.path.isdir(scanned_dir) == False:
+        raise ValueError('It is not valid path: '+scanned_dir)
+        return []
+    folders_name, folders_full_path = [], []
+    folders_to_scan = set()
+    folders_to_scan.add('')
+    folders_scanned = set()
+    while len(folders_to_scan)!=0:
+        folder = folders_to_scan.pop()
+        folder_full_path = os.path.join(scanned_dir,folder)
+        folders_scanned.add(folder_full_path)
+        contents = [os.path.join(folder,x) for x in os.listdir(folder_full_path)]
+        contents_full_path = [os.path.join(scanned_dir,x) for x in contents]
+        for c, cf in zip(contents,contents_full_path):
+            if os.path.isdir(cf):
+                if os.path.islink(cf):
+                    to_continue = False
+                    for x in folders_scanned:
+                        if os.path.samefile(cf,x):
+                            to_continue =True
+                            break
+                    if to_continue:
+                        continue
+                folders_name.append(c)
+                folders_full_path.append(cf)
+                folders_to_scan.add(c)
+
+    if with_root_dir==True:
+        return folders_full_path
+    else:# elif with_root_dir==False:
+        return folders_name
+
+
+    
+
 
 # this.splitext('123.txt') = ('123','.txt') , os.path.splitext('123.txt') = ('123','.txt')
 # this.splitext('.txt')    = ('','.txt')    , os.path.splitext('.txt')    = ('.txt','')
@@ -77,32 +113,6 @@ def scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
             sp_file = [splitext(x) for x in files_name]
             return [front for front,ext in sp_file if ext in exts_set]
 
-def __do_deep_scan_file(scanned_dir, output, with_root_dir, relative_path = ''):
-    this_root = os.path.join(scanned_dir,relative_path)
-    contents = os.listdir(this_root)
-    contents_full_path = [os.path.join(this_root,x) for x in contents]
-    files_name = []
-    folders_name = []
-    files_full_path = []
-    folders_full_path = []
-    for c,cf in zip(contents,contents_full_path):
-        if os.path.isfile(cf):
-            files_name.append(c)
-            files_full_path.append(cf)
-        else:
-            folders_name.append(c)
-            folders_full_path.append(cf)
-
-    if with_root_dir:
-        output.extend(files_full_path)  
-    else:
-        output.extend([os.path.join(relative_path, x) for x in files_name])
-
-    for folder in folders_name:
-        __do_deep_scan_file(scanned_dir,output,with_root_dir,os.path.join(relative_path,folder))
-
-    return
-
 def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
     if os.path.isdir(scanned_dir) == False:
         raise ValueError('It is not valid path: '+scanned_dir)
@@ -110,18 +120,29 @@ def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
     exts_set = __get_exts_set(exts)   
 
     files_name, files_full_path = [], []
-    folder_to_scan = set()
-    folder_to_scan.add('')
-    while len(folder_to_scan)!=0:
-        folder = folder_to_scan.pop()
-        contents = [os.path.join(folder,x) for x in os.listdir(os.path.join(scanned_dir,folder))]
+    folders_to_scan = set()
+    folders_to_scan.add('')
+    folders_scanned = set()
+    while len(folders_to_scan)!=0:
+        folder = folders_to_scan.pop()
+        folder_full_path = os.path.join(scanned_dir,folder)
+        folders_scanned.add(folder_full_path)
+        contents = [os.path.join(folder,x) for x in os.listdir(folder_full_path)]
         contents_full_path = [os.path.join(scanned_dir,x) for x in contents]
         for c, cf in zip(contents,contents_full_path):
             if os.path.isfile(cf):
                 files_name.append(c)
                 files_full_path.append(cf)
             else: # elif os.path.isdir(cf):
-                folder_to_scan.add(c)
+                if os.path.islink(cf):
+                    to_continue = False
+                    for x in folders_scanned:
+                        if os.path.samefile(cf,x):
+                            to_continue =True
+                            break
+                    if to_continue:
+                        continue
+                folders_to_scan.add(c)
    
     if exts_set is None:
         if with_root_dir==True and with_ext==True:
@@ -145,28 +166,6 @@ def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
             return [front for front,ext in sp_file if ext in exts_set]
 
 
-
-#def deep_scan_file(scanned_dir,exts=None,with_root_dir=True,with_ext=True):
-#    if os.path.isdir(scanned_dir) == False:
-#        raise ValueError('It is not valid path: '+scanned_dir)
-#        return []
-#    exts_set = __get_exts_set(exts)    
-
-#    files_path = []
-#    __do_deep_scan_file(scanned_dir,files_path, with_root_dir)
-
-#    if exts_set is None:
-#        return 
-#        if with_ext==True:
-#            return files_path
-#        else:
-#            return [splitext(x)[0] for x in files_path]
-#    else:
-#        sp_file = [splitext(x) for x in files_path]
-#        if with_ext==True:
-#            return [x for x in files_path if splitext(x)[1] in exts_set]
-#        else:
-#            return [front for front,ext in sp_file if ext in exts_set]
 
 def scan_pair(scanned_dir1,scanned_dir2,exts1,exts2,with_root_dir=True,with_ext=True):
     if exts1 is None or exts2 is None:
@@ -275,6 +274,17 @@ def makedirs(path):
     if os.path.isdir(path) == False:
         os.makedirs(path)
     return
+
+def cp_dir_tree(src_dir, dst_dir,with_root,level=0):
+    dirs = deep_scan_folder(src_dir,False)
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir)
+    for x in dirs:
+        p = os.path.join(dst_dir,x)
+        if not os.path.isdir(p):
+            os.mkdir(p)
+    return
+
 
 def get_time_stamp(start='year',end='second'):
     dd = str(datetime.datetime.now())
@@ -491,25 +501,25 @@ def print_table(table,add_first=False):
     else:
         print(str_table(table))
 
-def load_json_path(jpath,**kwargs):
+def load_json_file(jpath,**kwargs):
     fp = open(jpath,'r')
     r = json.load(fp,**kwargs)
     fp.close()
     return r
 
-def dump_json_path(obj,jpath,indent=4,sort_keys=True,**kwargs):
+def dump_json_file(obj,jpath,indent=4,sort_keys=True,**kwargs):
     fp = open(jpath,'w')
     json.dump(obj,fp,indent=indent,sort_keys=sort_keys,**kwargs)
     fp.close()
     return
 
-def load_pkl_path(ppath,**kwargs):
+def load_pkl_file(ppath,**kwargs):
     fp = open(ppath,'rb')
     r = pickle.load(fp,**kwargs)
     fp.close()
     return r
 
-def dump_pkl_path(obj,pjpath,**kwargs):
+def dump_pkl_file(obj,pjpath,**kwargs):
     fp = open(pjpath,'wb')
     pickle.dump(obj,fp,**kwargs)
     fp.close()
@@ -576,16 +586,16 @@ if __name__=='__main__':
         print('source content = ')
         print(test_dict)
 
-        pb.dump_json_path(test_dict,os.path.join(save_path,'test.json'))
-        jload = pb.load_json_path(os.path.join(save_path,'test.json'))
+        pb.dump_json_file(test_dict,os.path.join(save_path,'test.json'))
+        jload = pb.load_json_file(os.path.join(save_path,'test.json'))
         print('json file content = ')
         with open(os.path.join(save_path,'test.json'),'r') as fp:
             print(''.join(fp.readlines()))
         print('json reloaded content = ')
         print(jload)
 
-        pb.dump_pkl_path(test_dict,os.path.join(save_path,'test.pkl'))
-        pload = pb.load_pkl_path(os.path.join(save_path,'test.pkl'))
+        pb.dump_pkl_file(test_dict,os.path.join(save_path,'test.pkl'))
+        pload = pb.load_pkl_file(os.path.join(save_path,'test.pkl'))
         print('pkl reloaded content = ')
         print(pload)
 

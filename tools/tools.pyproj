@@ -28,6 +28,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="checkVocDataSet.py" />
+    <Compile Include="cpDirTree.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="decodeVideo.py">
       <SubType>Code</SubType>
     </Compile>
